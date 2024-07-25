@@ -32,7 +32,7 @@ particlesDict = [{'label': 'Mediator', #label of the first particle
                     'mass': 700.,
                     'g': 1,
                     'active': True,
-                    'ID': 1,
+                    'ID': 0,
                     'decaywidth': 0,
                     'decayreactions': 0,
                     'collisions': [{
@@ -42,7 +42,7 @@ particlesDict = [{'label': 'Mediator', #label of the first particle
                     },{
                         'partner': 'Mediator',
                         'products': ['SM', 'SM'],
-                        'sigmaV': lambda T: 10e-16
+                        'sigmaV': lambda T: 0
                     }
                                   ],
                         'equilibrium': True

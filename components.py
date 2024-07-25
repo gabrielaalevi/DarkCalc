@@ -26,6 +26,6 @@ class Component(object):
         self.collisions = collisions
         self.equilibrium = equilibrium
 
-    def equilibriumyield(self, T):
-        Y_eq = equilibrium_yield(self.mass, T, self.g)
+    def equilibriumyield(self, x, mDM):
+        Y_eq = equilibrium_yield(self.mass, x, mDM, self.g)
         return Y_eq

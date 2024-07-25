@@ -4,15 +4,16 @@ import numpy as np
 from scipy.special import kn
 import auxFunc
 
-def boltz(x, Y, comp_list):
+def boltz(Y, x, comp_list):
     dY = np.zeros(len(comp_list)) #list with all the rhs for all the components, ordered as in the comp_list
     for i in range(0, len(comp_list)):
         comp = comp_list[i]
         if comp.label == 'DM':
-                T = comp.mass/x
-    H = auxFunc.hubblerate(T) #hubble rate at temperature T
-    s = auxFunc.entropydensity(T) #entropy density at temperature T
-    dsdx = auxFunc.dsdx(x, (comp_list[0]).mass) #variation of entropy with x
+                mDM = comp.mass
+    H = auxFunc.hubblerate(x, mDM) #hubble rate at temperature T
+    s = auxFunc.entropydensity(x, mDM) #entropy density at temperature T
+    dsdx = auxFunc.dsdx(x, mDM) #variation of entropy with x
+    T = mDM/x
     for i in range(0, len(comp_list)):
     #loop parsing through all components
         comp = comp_list[i]
@@ -28,12 +29,12 @@ def boltz(x, Y, comp_list):
                         #loop parsing through all the components, to see which ones are products in the decay
                         comp_product = comp_list[k]
                         if (comp.decayreactions[j]['products'][l]) == comp_product.label:
-                            dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(T)
+                            dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
                             product.append(comp_product.ID)
-                dY[i] += - (1/(3 * H)) * dsdx * (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(T) * comp.decayreactions[j]['br'] *dec_term)
+                dY[i] += - (1/(3 * H)) * dsdx * (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) * comp.decayreactions[j]['br'] *dec_term)
                 for l in range(0, len(product)):
                     #adding the correspondent source term to the dY equation of each product
-                    dY[(product[l])] += (1/(3 * H)) * dsdx * (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(T) * comp.decayreactions[j]['br'] * dec_term)
+                    dY[(product[l])] += (1/(3 * H)) * dsdx * (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) * comp.decayreactions[j]['br'] * dec_term)
         #collision term for component i
         for m in range(0, len(comp.collisions)):
         #loop parsing through all the collisions component i can participate in as a reagent
@@ -50,17 +51,17 @@ def boltz(x, Y, comp_list):
                         partner = comp_product
                     if (comp.collisions[m]['products'][n]) == comp_product.label:
                     #if the component we are analysing is one of the products of the reaction, we add to the col_term and save its ID
-                        col_term *= Y[comp_product.ID]/comp_product.equilibriumyield(T)
+                        col_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
                         product.append(comp_product.ID)
                 if partner.label != 'SM':
-                    dY[i] += - (1/(3 * H)) * dsdx* comp.collisions[m]['sigmaV'](T) *((Y[i] * Y[partner.ID])/(comp.equilibriumyield (T) * partner.equilibriumyield(T)) - col_term)
-                    dY[partner.ID] += - (1/(3*H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i] * Y[partner.ID])/(comp.equilibriumyield(T) * partner.equilibriumyield(T)) - col_term)
+                    dY[i] += - (1/(3 * H)) * dsdx* comp.collisions[m]['sigmaV'](T) *((Y[i] * Y[partner.ID])/(comp.equilibriumyield (x, mDM) * partner.equilibriumyield(x, mDM)) - col_term)
+                    dY[partner.ID] += - (1/(3*H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i] * Y[partner.ID])/(comp.equilibriumyield(x, mDM) * partner.equilibriumyield(x, mDM)) - col_term)
                     for p in range(0, len(product)):
-                        dY[(product[p])] += (1/(3 * H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i]*Y[partner.ID])/(comp.equilibriumyield(T) * partner.equilibriumyield(T)) - col_term)
+                        dY[(product[p])] += (1/(3 * H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i]*Y[partner.ID])/(comp.equilibriumyield(x, mDM) * partner.equilibriumyield(x, mDM)) - col_term)
                 if partner.label == 'SM':
-                    dY[i] += (1/(3*H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i]/ comp.equilibriumyield(T)) - col_term)
+                    dY[i] += (1/(3*H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i]/ comp.equilibriumyield(x, mDM)) - col_term)
                     for p in range(0, len(product)):
-                        dY[(product[p])] += (1/(3 * H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i]/comp.equilibriumyield(T)) - col_term)
+                        dY[(product[p])] += (1/(3 * H)) * dsdx * comp.collisions[m]['sigmaV'](T) * ((Y[i]/comp.equilibriumyield(x, mDM)) - col_term)
     return dY
                 
             
