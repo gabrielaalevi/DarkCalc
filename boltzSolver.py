@@ -1,20 +1,32 @@
 #Solver for the Boltzmann Equation
-from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 import numpy as np
 from boltzmannEq import boltz
 from components import Component
 import auxFunc
-from modelParameters import particlesDict, Tlist
+from modelParameters import comp_names, Tvalues, x
+from inputParameters import SM
 import numpy as np
-comp_list = []
-for i in range(0, len(particlesDict)):
-    comp = Component(particlesDict[i]['label'], particlesDict[i]['active'], particlesDict[i]['ID'], particlesDict[i]['g'], particlesDict[i]['mass'], particlesDict[i]['decaywidth'], particlesDict[i]['decayreactions'], particlesDict[i]['collisions'], particlesDict[i]['equilibrium'])
-    comp_list.append(comp)
-for k in range(0, len(comp_list)):
-    comp = comp_list[k]
+
+#loop to find the particle with the 'DM' label, and calculate x
+for k in range(0, len(comp_names)):
+    comp = comp_names[k]
     if comp.label == 'DM':
-        x = comp.mass/Tlist
+        x = comp.mass/Tvalues
         mDM = comp.mass
-y0 = [comp.equilibriumyield(x[0], mDM) for comp in comp_list]
-sol = odeint(boltz, y0, x, args=(comp_list,), atol = 10**(-14), rtol = 10**(-15))
-np.savetxt('sol.csv', sol)
+
+#creating the y0 array, that holds the initial value of yield for each particle, and loop to fill it
+y0 = np.zeros(len(comp_names))
+for i in range(0, len(comp_names)):
+    comp = comp_names[i]
+    if comp.in_equilibrium == 1:
+        y0[i] = comp.equilibriumyield(x[0], mDM)
+    if comp.in_equilibrium == 0:
+        y0[i] = 0.0001
+
+#solving the ODE
+sol1 = solve_ivp(boltz, [x[0], 9.5],  y0, args=(comp_names, SM), method='BDF', dense_output= True, rtol = 10**(-14), atol = 10**(-14))
+sol2 = solve_ivp(boltz, [9.5, 10.5], (sol1.y[0][-1], sol1.y[1][-1]), args=(comp_names, SM), method='BDF', dense_output= True, rtol = 10**(-14), atol = 10**(-14))
+sol3 = solve_ivp(boltz, [10.5, 15], (sol2.y[0][-1], sol2.y[1][-1]), args=(comp_names, SM), method='BDF', dense_output= True, rtol = 10**(-14), atol = 10**(-14))
+sol4 = solve_ivp(boltz, [15, x[-1]], (sol3.y[0][-1], sol3.y[1][-1]), args=(comp_names, SM), method='BDF', dense_output= True, rtol = 10**(-12), atol = 10**(-14))
+#np.savetxt('sol.csv', sol)

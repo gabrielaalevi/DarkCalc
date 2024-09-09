@@ -5,26 +5,19 @@ from auxFunc import equilibrium_yield
 class Component(object):
     #class to hold the main characteristics of each component
 
-    @classmethod
-    def from_dict(label,particleDict):
-        #creates object from the particleDict with the required properties
-
-        newComponent = Component(label, active, ID, g, mass, 
-                                 decayreactions, 
-                                 collisions, equilibrium)
-        return newComponent
-
-    
-    def __init__(self, label, active, ID, g, mass, decaywidth, decayreactions, collisions, equilibrium):
+    def __init__(self, label, type, PDG, ID, active, in_equilibrium, mass, g, xarray, collisions, decaywidth, decayreactions):
         self.label = label
-        self.active = active
+        self.type = type
+        self.PDG = PDG
         self.ID = ID
-        self.g = g
+        self.active = active
+        self.in_equilibrium = in_equilibrium
         self.mass = mass
+        self.g = g
+        self.xarray = xarray
+        self.collisions = collisions
         self.decaywidth = decaywidth
         self.decayreactions = decayreactions
-        self.collisions = collisions
-        self.equilibrium = equilibrium
 
     def equilibriumyield(self, x, mDM):
         Y_eq = equilibrium_yield(self.mass, x, mDM, self.g)
