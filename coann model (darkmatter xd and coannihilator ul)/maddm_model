@@ -1,0 +1,7 @@
+import model DMSimp_t
+define darkmatter xd
+define coannihilator ul
+generate relic_density
+output model2
+launch model2
+set mxd 950
