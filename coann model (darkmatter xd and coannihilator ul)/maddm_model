@@ -1,3 +1,4 @@
+MADDM
 import model DMSimp_t
 define darkmatter xd
 define coannihilator ul
@@ -6,3 +7,13 @@ output model2
 launch model2
 set mxd 500
 set mul 550
+
+MADGRAPH
+import model DMSimp_t
+define new = xd xd~ ul ul~
+generate p p > xd xd~
+output test1
+launch test1
+mxd 500
+mys3qu1 550
+wys3qu1 auto
