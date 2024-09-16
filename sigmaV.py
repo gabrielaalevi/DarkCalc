@@ -1,10 +1,9 @@
 #this module finds all the reactions a specific particle appears as the reagent, and interpolates its cross-section
 import pandas as pd
 import numpy as np
-from inputParameters import BSM, nsteps
 import pyslha
 
-def find_processes_col(part, x):
+def find_processes_col(part, x, BSM, nsteps):
     processes_data = pd.read_csv("processes_taacs.csv", header=None)
     taacs = pd.read_csv("taacs.csv")
     collisions = list() #list to hold all the arrays of collisions for an specific particle
@@ -59,12 +58,13 @@ def find_processes_col(part, x):
     collisions.append(col_selfann)
     col_coann = [BSM[(index_part-1)], [], sigmav_coann]
     collisions.append(col_coann)
+    print(collisions)
     return collisions
 
-def find_decays(part):
+def find_decays(part, param_path):
 #function to find all the decay reactions for a particle
     decayreactions = list() #list to hold all the decay reactions
-    params = pyslha.read(r"C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\param_card.dat") #reading the param_card
+    params = pyslha.read(param_path) #reading the param_card
     decay = params.decays[part].decays
     for i in range(0, len(decay)):
     #parsing through all the decays for part

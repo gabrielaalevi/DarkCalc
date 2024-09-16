@@ -5,12 +5,11 @@ from auxFunc import equilibrium_yield
 class Component(object):
     #class to hold the main characteristics of each component
 
-    def __init__(self, label, type, PDG, ID, active, in_equilibrium, mass, g, xarray, collisions, decaywidth, decayreactions):
+    def __init__(self, label, type, PDG, ID, in_equilibrium, mass, g, xarray, collisions, decaywidth, decayreactions):
         self.label = label
         self.type = type
         self.PDG = PDG
         self.ID = ID
-        self.active = active
         self.in_equilibrium = in_equilibrium
         self.mass = mass
         self.g = g
