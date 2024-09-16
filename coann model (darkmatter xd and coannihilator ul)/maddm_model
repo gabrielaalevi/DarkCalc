@@ -4,4 +4,5 @@ define coannihilator ul
 generate relic_density
 output model2
 launch model2
-set mxd 950
+set mxd 500
+set mul 550
