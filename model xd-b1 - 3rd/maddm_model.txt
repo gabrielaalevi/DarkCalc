@@ -5,5 +5,5 @@ generate relic_density
 output modelxdb1_3rd
 launch modelxdb1_3rd
 set mxd 500
-set mys3qd3 520
+set mys3qu3 520
 set lams3d3x3 1e-3
