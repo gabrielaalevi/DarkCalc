@@ -18,7 +18,7 @@ def degrees_of_freedom(x, mDM):
 def hubblerate(x, mDM):
     T = mDM/x
     g_star = degrees_of_freedom(x, mDM) #g_star is the number of relativistic degrees of freedom
-    hubble = ((math.pi**2)/90)**(1/2) * (g_star **(1/2)) * T**2 / m_planck #hubble constant, varying with temperature
+    hubble = (((math.pi**3)/45)**(1/2) * (g_star **(1/2)) * 2 * T**2) / m_planck #hubble constant, varying with temperature
     return hubble
 
 #calculates the entropy density s, depending on the temperature T (in GeV)
@@ -34,16 +34,16 @@ def equilibrium_yield(m, x, mDM, g):
     #and s represents entropy density.
     T = mDM/x
     g_star = degrees_of_freedom(x, mDM)#g_* is the number of relativistic degrees of freedom
-    s = (2/45) * (math.pi**2) * (g_star) * T**3 #entropy density
-    if (m/T)>10: #non-relativistic regime
-        Y_eq = (g * (m * T/ (2 * math.pi))**(3/2) * math.exp(-m/T))/s
-    elif (m/T)>(2/3): #semi-relativistic regime
-        Y_eq = (45 * g * (m/T)**2 * kn(2,(m/T)))/(4 * math.pi**4 * g_star)
-    elif (m/T)<=(2/3): #relativistic regime
-        if g > 0:
-            Y_eq = ((3/4) * (zeta(3)/math.pi**2) * g * (T)**3)/s
-        if g <= 0:
-            Y_eq = ((zeta(3)/math.pi**2) * abs(g) * (T)**3)/s
+    #s = (2/45) * (math.pi**2) * (g_star) * T**3 #entropy density
+    #if (m/T)>10: #non-relativistic regime
+        #Y_eq = (abs(g) * (m * T/ (2 * math.pi))**(3/2) * math.exp(-m/T))/s
+    #elif (m/T)>(2/3): #semi-relativistic regime
+    Y_eq = (45 * abs(g) * (m/T)**2 * kn(2,(m/T)))/(4 * math.pi**4 * g_star)
+    #elif (m/T)<=(2/3): #relativistic regime
+        #if g > 0:
+           #Y_eq = ((3/4) * (zeta(3)/math.pi**2) * abs(g) * (T)**3)/s
+        #if g <= 0:
+            #Y_eq = ((zeta(3)/math.pi**2) * abs(g) * (T)**3)/s
     return Y_eq
 
 #calculates the variation of entropy with x, where x = m_DM/T

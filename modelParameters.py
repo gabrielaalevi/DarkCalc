@@ -2,13 +2,13 @@
 
 import numpy as np
 import pyslha
-from sigmaV import find_processes_col, find_decays
+from getProcesses import find_processes_col, find_decays, find_dof
 from components import Component
 
 #Input from the user
 
-nsteps = 100000 #number of values of x to be used, max is 5 million
-Tvalues = np.linspace(1300, 13, nsteps) #interval of temperatures for the data, in GeV
+nsteps = 1000000 #number of values of x to be used, max is 5 million
+Tvalues = np.linspace(500, 5, nsteps) #interval of temperatures for the data, in GeV
 param_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\param_card.dat' #path to the param_card
 
 #In pnames, we have a list of all the particles and some relevant information. Each particle must have a
@@ -21,8 +21,8 @@ param_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\param_card
 # is important to note that there should be only one particle with label 'DM', which will be used to 
 # calculate x.
 
-pnames = [['DM', 'xd', 57, 0, 1]]
-         #['Coannihilator', 'ul', 1000002, 1, 1]] #list of the BSM particles present on the model
+pnames = [['DM', 'xd', 57, 0, 1],
+         ['Coannihilator', 'ul', 1000002, 1, 1]] #list of the BSM particles present on the model
 
 #non-input
 
@@ -55,7 +55,8 @@ for i in range(0, len(pnames)):
         part_mass = param_card.blocks['MASS'][part_pdg]
         part = pnames[i][1]
         col_processes = find_processes_col(part, x, BSM, nsteps)
-        comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], pnames[i][3], pnames[i][4],  part_mass, 1, x, col_processes,0, 0)
+        dof = find_dof(part, part_pdg, param_path)
+        comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], pnames[i][3], pnames[i][4],  part_mass, dof, x, col_processes,0, 0)
     else:
         part_pdg = pnames[i][2]
         part_mass = param_card.blocks['MASS'][part_pdg]
@@ -63,5 +64,6 @@ for i in range(0, len(pnames)):
         col_processes = find_processes_col(part, x, BSM, nsteps)
         part_width = 0 #param_card.decays[part_pdg].totalwidth
         dec_reactions = 0 #find_decays(part_pdg, param_path)
-        comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], pnames[i][3], pnames[i][4], part_mass, 1, x, col_processes,part_width, dec_reactions)
+        dof = find_dof(part, part_pdg, param_path)
+        comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], pnames[i][3], pnames[i][4], part_mass, dof, x, col_processes,part_width, dec_reactions)
     comp_names.append(comp)
