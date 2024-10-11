@@ -3,10 +3,11 @@ import model DMSimp_t
 define darkmatter xd
 define coannihilator ul
 generate relic_density
-output model2
-launch model2
+output modelxdul
+launch modelxdul
 set mxd 500
 set mul 550
+set relic_canonical False
 
 MADGRAPH
 import model DMSimp_t
