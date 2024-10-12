@@ -1,6 +1,0 @@
-import model DMsimp_s_spin0_MD
-define darkmatter ~xd
-generate relic_density
-output ../../output_test
-launch  ../../output_test
-exit
