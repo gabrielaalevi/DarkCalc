@@ -1,0 +1,46 @@
+################################################
+#                 MadDM v. 3.2                 #
+################################################
+
+
+################################################
+# Relic Density                                #
+################################################
+
+Omegah2                       = 2.25e-01
+Omegah_Planck                 = 1.20e-01
+xsi                           = 1.00e+00 	 # xsi = (Omega/Omega_Planck)
+x_f                           = 2.20e+01
+sigmav_xf                     = 4.94e-27 	 # cm^3 s^-1
+# % of the relic density channels
+%_xdxdx_bbx                   = 2.92 %
+%_xdxdx_ttx                   = 3.09 %
+%_xdxdx_b1b1x                 = 0.00 %
+%_b1xd_gb                     = 5.79 %
+%_b1xxdx_gbx                  = 5.79 %
+%_b1xd_ab                     = 0.05 %
+%_b1xxdx_abx                  = 0.05 %
+%_b1xd_bz                     = 1.38 %
+%_b1xxdx_bxz                  = 1.38 %
+%_b1xd_twm                    = 6.59 %
+%_b1xxdx_txwp                 = 6.59 %
+%_b1b1x_bbx                   = 0.01 %
+%_b1b1_bb                     = 0.00 %
+%_b1xb1x_bxbx                 = 0.00 %
+%_b1b1x_gg                    = 45.81 %
+%_b1b1x_wpwm                  = 1.54 %
+%_b1b1x_ga                    = 1.65 %
+%_b1b1x_gz                    = 14.72 %
+%_b1b1x_aa                    = 0.01 %
+%_b1b1x_az                    = 0.12 %
+%_b1b1x_ddx                   = 0.02 %
+%_b1b1x_uux                   = 0.02 %
+%_b1b1x_ssx                   = 0.02 %
+%_b1b1x_ccx                   = 0.02 %
+%_b1b1x_ttx                   = 0.02 %
+%_b1b1x_zz                    = 0.61 %
+%_b1b1x_emep                  = 0.00 %
+%_b1b1x_tamtap                = 0.00 %
+%_b1b1x_vevex                 = 0.00 %
+%_b1b1x_zh                    = 0.00 %
+%_b1b1x_xdxdx                 = 1.82 %
