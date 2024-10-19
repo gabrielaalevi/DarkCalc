@@ -13,6 +13,9 @@ def boltz(x, Y, comp_names, SM, mDM):
     for i in range(0, len(comp_names)):
     #loop parsing through all components
         comp = comp_names[i]
+        a = 0
+        b = 0
+        c = 0
         x_new = comp.xarray
         tol = abs(x - x_new[0])
         index = 0
@@ -60,37 +63,15 @@ def boltz(x, Y, comp_names, SM, mDM):
                     #if the component we are analysing is one of the products of the reaction, we add to the col_term and save its ID
                         col_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
                         product.append(comp_product.ID)
+            print('x', x, 'comp', comp.type, 'partner', partner_comp.type, 'produtcs', product, 'sigv', sigma_v)
             if sigma_v != 0:
-                #print('comp yeq:', comp.type, comp.equilibriumyield(x, mDM), 'partner yeq:', partner_comp.type , partner_comp.equilibriumyield(x, mDM))
-                #print('H', H, 'dsdx', dsdx)
-                if not product:
-                #condition if the product list is empty (i.e. the reaction only produces SM particles, which are in equilibrium)
-                    if partner_comp.type not in SM:
-                        if partner_comp.label == comp.label:
-                        #multiplying by 2 because that's what they do in MadDM, doing it just to compare the results
-                            dY[i] += (2 * sigma_v) *((Y[i]**2) - (comp.equilibriumyield(x, mDM)**2))
-                        else:
-                            dY[i] += sigma_v *((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM)))
-                            #print(sigma_v, Y[i], Y[partner_comp.ID], comp.equilibriumyield(x, mDM), partner_comp.equilibriumyield(x, mDM))
-                            #print(comp.type, partner_comp.type, sigma_v *((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM))), Y[comp.ID], Y[partner_comp.ID])
-                    if partner_comp.type in SM:
-                        dY[i] += sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
+                if partner_comp.type not in SM:
+                #for self-annihilation, co-annihilation, and double conversion interactions
+                    dY[i] += (1/(3 * H)) * dsdx * sigma_v * (Y[i] * Y[partner_comp.ID] - comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term)
                 else:
-                #if the product list is not empty (i.e. we have BSM particles produced in this reaction)
-                    if partner_comp.type not in SM:
-                        if partner_comp.label == comp.label:
-                            dY[i] += (sigma_v/2) *((Y[i]**2) - (comp.equilibriumyield(x, mDM)**2) * col_term)
-                        else:
-                            dY[i] += sigma_v *((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM))*col_term)
-                        for p in range(0, len(product)):
-                            dY[(product[p])] += - sigma_v * (Y[i] * Y[partner_comp.ID] - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM)) * col_term)
-                    if partner_comp.type in SM:
-                        dY[i] += sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
-                    for p in range(0, len(product)):
-                        dY[(product[p])] += - sigma_v * (Y[i] - comp.equilibriumyield(x, mDM) * col_term)
-    for i in range(0, len(dY)):
-    #loop to multiply all the dY elements by the 1/3H * ds/dx factor
-        dY[i] = (1/(3 * H)) * dsdx * dY[i]
+                #for conversion interaction
+                    dY[i] += (1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
+        print('x', x, 'Y', Y[i], 'Y_eq', comp.equilibriumyield(x, mDM))
     print('x', x, 'dY', dY)
     return dY
                 

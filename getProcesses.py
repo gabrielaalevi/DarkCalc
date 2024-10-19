@@ -82,16 +82,16 @@ def find_dof(part_name, part_pdg, param_path):
     param_card=open(param_path, 'r') #opening the param_card
     lines = param_card.readlines() #reading all the lines in the param_card
     pdg = str(part_pdg)
-    header_index = lines.index('Block QNUMBERS ' + pdg + '  # ' + part_name + ' \n') #finding the index of the header for the desired particle in the param_card
+    header_index = lines.index('BLOCK QNUMBERS ' + pdg + ' #  ' + part_name + '\n') #finding the index of the header for the desired particle in the param_card
     spin_line = lines[header_index+2] #finding the index for the spin of the desired particle
-    spin_string = spin_line[10] #number of total spin states 2S + 1
+    spin_string = spin_line[8] #number of total spin states 2S + 1
     spin_states = int(spin_string)
     spin = (spin_states - 1)/2 #spin for the particle
     flavour_line = lines[header_index+3] #finding the index of the line of colour rep
-    flavour_string = flavour_line[10] #finding the number of flavours for the particle
+    flavour_string = flavour_line[8] #finding the number of flavours for the particle
     flavour_states = int(flavour_string)
     anti_line = lines[header_index+4] #finding the index of the 'particle/anti distinction' line
-    anti_distinction_string = anti_line[10] #finding if the particle has an anti-particle (1) or if it is its own anti-particle (0)
+    anti_distinction_string = anti_line[8] #finding if the particle has an anti-particle (1) or if it is its own anti-particle (0)
     anti_distinction = int(anti_distinction_string)
     dof_total = spin_states * flavour_states
     if anti_distinction == 1:
