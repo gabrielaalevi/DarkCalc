@@ -7,7 +7,7 @@ def find_processes_col(part, x, BSM, nsteps):
     processes_data = pd.read_csv("processes_taacs.csv", header=None)
     taacs = pd.read_csv("taacs.csv")
     collisions = list() #list to hold all the arrays of collisions for an specific particle
-    sigmav_selfann = np.zeros(nsteps) #array to hold the cross section for all the self-annihilation processes, with the intention of simplyfing the integration
+    sigmav_selfann = np.zeros(nsteps) #array to hold the cross section for all the self-annihilation processes
     sigmav_coann = np.zeros(nsteps) #array to hold the cross section for all co-annihilation processes with the particle right before part in the BSM list
     index_part = 0 #saves the index of part in the BSM list
 #loop through all the processes in the taacs files
@@ -16,27 +16,31 @@ def find_processes_col(part, x, BSM, nsteps):
         products = list() #list to hold the products of each reaction
         partners_names = list() #list to hold the reagents of each reaction
         process_name = processes_data.iloc[i,1]
+        reagents_name = process_name[:process_name.index('_')]
+        products_name = process_name[(process_name.index('_')+1):]
         sigma_v = 0
-#checking if particle participates in process i
-        if part in process_name and process_name.index(part) < process_name.index('_'):
+#checking if particle participates in process i, and if it is a reagent
+        if part in reagents_name:
 #loop through the other particles to find the partner and the products
             for j in range(0, len(BSM)):
                 part_j = BSM[j]
                 if part_j == part:
                     index_part = j
                 if part_j in process_name:
-#checking if particle j is a reagent in reaction i. if so, saves it in the partners_list
-                    if process_name.index(part_j) < process_name.index('_'):
+                #checking if particle j is a reagent in reaction i. if so, saves it in the partners_list
+                    if part_j in reagents_name:
                         partners_names.append(part_j)
 #checking if particle j is a product in reaction i. if so, saves it in the products list
-                    if process_name.index(part_j) > process_name.index('_'):
+                    if part_j in products_name:
                         products.append(part_j)
-#checking if the partner is the particle analysed (self-annihilation) or not (co-annihilation)
-            if process_name.count(part) == 1:
+                        if products_name.count(part_j) == 2:
+                        #if part_j appears twice in the products_name, we add it twice tot the products list
+                            products.append(part_j)
+            if reagents_name.count(part) == 1:
                 for k in range(0, len(partners_names)):
                     if partners_names[k] != part:
                         col_partner = partners_names[k]
-            if process_name.count(part) == 2:
+            if reagents_name.count(part) == 2:
                 col_partner = part
 #reading the data from the taacs files
             x_data = taacs.iloc[:,0]
@@ -82,7 +86,7 @@ def find_dof(part_name, part_pdg, param_path):
     param_card=open(param_path, 'r') #opening the param_card
     lines = param_card.readlines() #reading all the lines in the param_card
     pdg = str(part_pdg)
-    header_index = lines.index('BLOCK QNUMBERS ' + pdg + ' #  ' + part_name + '\n') #finding the index of the header for the desired particle in the param_card
+    header_index = lines.index('BLOCK QNUMBERS ' + pdg + ' #   ' + part_name + '\n') #finding the index of the header for the desired particle in the param_card
     spin_line = lines[header_index+2] #finding the index for the spin of the desired particle
     spin_string = spin_line[8] #number of total spin states 2S + 1
     spin_states = int(spin_string)

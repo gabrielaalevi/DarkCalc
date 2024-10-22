@@ -13,9 +13,6 @@ def boltz(x, Y, comp_names, SM, mDM):
     for i in range(0, len(comp_names)):
     #loop parsing through all components
         comp = comp_names[i]
-        a = 0
-        b = 0
-        c = 0
         x_new = comp.xarray
         tol = abs(x - x_new[0])
         index = 0
@@ -67,7 +64,11 @@ def boltz(x, Y, comp_names, SM, mDM):
             if sigma_v != 0:
                 if partner_comp.type not in SM:
                 #for self-annihilation, co-annihilation, and double conversion interactions
-                    dY[i] += (1/(3 * H)) * dsdx * sigma_v * (Y[i] * Y[partner_comp.ID] - comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term)
+                    dY[i] += (1/(3 * H)) * dsdx * sigma_v * ((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term))
+                    Hdsdx = (1/(3 * H)) * dsdx
+                    a = ((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term))
+                    print('Hdsdx', Hdsdx, 'sigv', sigma_v, 'Y_comp', Y[i], 'Y partner', Y[partner_comp.ID], 'Yeq comp', comp.equilibriumyield(x, mDM), 'Yeq partner', partner_comp.equilibriumyield(x, mDM))
+                    print('a', a, 'col_term', col_term)
                 else:
                 #for conversion interaction
                     dY[i] += (1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
