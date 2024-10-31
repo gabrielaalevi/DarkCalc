@@ -38,10 +38,10 @@ def equilibrium_yield(m, x, mDM, g):
     T = mDM/x
     g_star = degrees_of_freedom(x, mDM)#g_* is the number of relativistic degrees of freedom
     s = entropydensity(x, mDM) #entropy density
-    #if (m/T)>10: #non-relativistic regime
-        #Y_eq = (45/(4 * np.pi**4)) * (abs(g)/g_star) * (m/T)**(1.5) * np.sqrt(np.pi/2) * np.exp(-m/T) * (1 + (15/(8 * (m/T))) + 105/(128 * (m/T)**2) - (315/(1024 * (m/T)**3) )) #(abs(g) * (m * T/ (2 * math.pi))**(3/2) * math.exp(-m/T))/s
+    if (m/T)>10: #non-relativistic regime
+        Y_eq = (45/(4 * np.pi**4)) * (abs(g)/g_star) * (m/T)**(1.5) * np.sqrt(np.pi/2) * np.exp(-m/T) * (1 + (15/(8 * (m/T))) + 105/(128 * (m/T)**2) - (315/(1024 * (m/T)**3) )) #(abs(g) * (m * T/ (2 * math.pi))**(3/2) * math.exp(-m/T))/s
     if (m/T)>(2/3): #semi-relativistic regime
-        Y_eq = (45 * abs(g) * (m/T)**2 * kn(2,(m/T)))/(4 * math.pi**4 * g_star)
+        Y_eq = ((abs(g)/(2 * np.pi**2)) * ( T * m**2)* kn(2, m/T)/s) #(45 * abs(g) * (m/T)**2 * kn(2,(m/T)))/(4 * math.pi**4 * g_star)
     elif (m/T)<=(2/3): #relativistic regime
         if g > 0: #fermions
            Y_eq = ((3/4) * (zeta(3)/math.pi**2) * abs(g) * (T)**3)/s

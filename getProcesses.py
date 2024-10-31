@@ -86,7 +86,7 @@ def find_dof(part_name, part_pdg, param_path):
     param_card=open(param_path, 'r') #opening the param_card
     lines = param_card.readlines() #reading all the lines in the param_card
     pdg = str(part_pdg)
-    header_index = lines.index('BLOCK QNUMBERS ' + pdg + ' #   ' + part_name + '\n') #finding the index of the header for the desired particle in the param_card
+    header_index = lines.index('BLOCK QNUMBERS ' + pdg + ' #  ' + part_name + '\n') #finding the index of the header for the desired particle in the param_card
     spin_line = lines[header_index+2] #finding the index for the spin of the desired particle
     spin_string = spin_line[8] #number of total spin states 2S + 1
     spin_states = int(spin_string)
