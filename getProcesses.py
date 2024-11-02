@@ -3,13 +3,14 @@ import pandas as pd
 import numpy as np
 import pyslha
 
-def find_processes_col(part, x, BSM, nsteps):
+def find_processes_col(part, x, BSM, nsteps, SM):
+#opening the taacs files
     processes_data = pd.read_csv("processes_taacs.csv", header=None)
     taacs = pd.read_csv("taacs.csv")
     collisions = list() #list to hold all the arrays of collisions for an specific particle
     sigmav_selfann = np.zeros(nsteps) #array to hold the cross section for all the self-annihilation processes
     sigmav_coann = np.zeros(nsteps) #array to hold the cross section for all co-annihilation processes with the particle right before part in the BSM list
-    index_part = 0 #saves the index of part in the BSM list
+    index_part = 0 #saves the index of the particle in the BSM list
 #loop through all the processes in the taacs files
     for i in range(0, len(processes_data)):
         col_partner = '  ' #variable to hold the partner of a reaction
@@ -25,22 +26,25 @@ def find_processes_col(part, x, BSM, nsteps):
             for j in range(0, len(BSM)):
                 part_j = BSM[j]
                 if part_j == part:
+                #saving the index for part in the BSM list
                     index_part = j
                 if part_j in process_name:
                 #checking if particle j is a reagent in reaction i. if so, saves it in the partners_list
                     if part_j in reagents_name:
                         partners_names.append(part_j)
-#checking if particle j is a product in reaction i. if so, saves it in the products list
+                #checking if particle j is a product in reaction i. if so, saves it in the products list
                     if part_j in products_name:
                         products.append(part_j)
                         if products_name.count(part_j) == 2:
-                        #if part_j appears twice in the products_name, we add it twice tot the products list
+                        #if part_j appears twice in the products_name, we add it twice to the products list
                             products.append(part_j)
             if reagents_name.count(part) == 1:
+            #if the part appears only once in the reagents_name, we find the other partner and save it in col_partner
                 for k in range(0, len(partners_names)):
                     if partners_names[k] != part:
                         col_partner = partners_names[k]
             if reagents_name.count(part) == 2:
+            #if the part appears twice in the reagents name, then it is colliding with itself, and we save the part as the col_partner
                 col_partner = part
 #reading the data from the taacs files
             x_data = taacs.iloc[:,0]
@@ -59,13 +63,19 @@ def find_processes_col(part, x, BSM, nsteps):
                 else:
                     col = [col_partner, products, sigma_v]
                     collisions.append(col)
+#adding the conversion reaction
+                    #col = ['SM', [col_partner], sigma_v]
+                    #collisions.append(col)
             else:
+#if we have one or two BSM particles as products in the process
                 col = [col_partner, products, sigma_v]
                 collisions.append(col)
     col_selfann = [part, [], sigmav_selfann]
     collisions.append(col_selfann)
     col_coann = [BSM[(index_part-1)], [], sigmav_coann]
     collisions.append(col_coann)
+    #col_conversion = ['SM', [BSM[(index_part-1)]], sigmav_coann]
+    #collisions.append(col_conversion)
     print(collisions)
     return collisions
 

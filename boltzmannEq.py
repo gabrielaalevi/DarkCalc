@@ -60,19 +60,19 @@ def boltz(x, Y, comp_names, SM, mDM, x_new):
                     #if the component we are analysing is one of the products of the reaction, we add to the col_term and save its ID
                         col_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
                         product.append(comp_product.ID)
-            print('x', x, 'comp', comp.type, 'partner', partner_comp.type, 'produtcs', product, 'sigv', sigma_v)
             if sigma_v != 0:
-                if partner_comp.type not in SM:
+                if partner != 'SM':
                 #for self-annihilation, co-annihilation, and double conversion interactions
                     dY[i] += (1/(3 * H)) * dsdx * sigma_v * ((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term))
-                    Hdsdx = (1/(3 * H)) * dsdx
-                    a = (1/(3 * H)) * dsdx * sigma_v * ((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term))
-                    print(a)
-                    print('Hdsdx', Hdsdx, 'sigv', sigma_v, 'Y_comp', Y[i], 'Y partner', Y[partner_comp.ID], 'Yeq comp', comp.equilibriumyield(x, mDM), 'Yeq partner', partner_comp.equilibriumyield(x, mDM))
+                    a = (1/(3 * H)) * dsdx
+                    b = (1/(3 * H)) * dsdx * sigma_v * ((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term))
+                    print('x', x, 'comp', comp.type, 'partner', partner, 'sigv', sigma_v, 'Y_comp', Y[i], 'Y_eq comp', comp.equilibriumyield(x, mDM), 'Y_part', Y[partner_comp.ID], 'Y_eq part', partner_comp.equilibriumyield(x, mDM), 'col term', col_term, '1/3h dsdx', a)
+                    print(b)
                 else:
                 #for conversion interaction
                     dY[i] += (1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
-        print('x', x, 'Y', Y[i], 'Y_eq', comp.equilibriumyield(x, mDM))
+                    for p in range(0, len(product)):
+                        dY[product[p]] += -(1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
     print('x', x, 'dY', dY)
     return dY
 
@@ -85,7 +85,6 @@ def debug_func(x, Y, comp_names, SM, mDM, x_new):
         else:
             nofreactions = nofreactions + len(comp.decayreactions) + len(comp.collisions)
     reaction_terms = np.zeros((nofreactions+1))
-    print(nofreactions)
     reaction_terms[0] = x
     counter = 1 #counting all the reactions that have been saved
     H = auxFunc.hubblerate(x, mDM) #hubble rate at temperature T
@@ -115,9 +114,9 @@ def debug_func(x, Y, comp_names, SM, mDM, x_new):
                         #loop parsing through all the components, to see which ones are products in the decay
                         comp_product = comp_names[k]
                         if (comp.decayreactions[j][0][l]) == comp_product.PDG:
-                            dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
+                            dec_term *= Y[2* comp_product.ID]/Y[2 * comp_product.ID + 1]
                             product.append(comp_product.ID)
-                reaction_terms[counter] = ((kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[2*i] - Y[(2*i)+1] *dec_term))/H
+                reaction_terms[counter] = ((kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[2*i] - Y[(2*i+1)] *dec_term))/H
                 counter += 1
     #collision term for component i
         for m in range(0, len(comp.collisions)):
@@ -136,20 +135,15 @@ def debug_func(x, Y, comp_names, SM, mDM, x_new):
                 #loop parsing through all the products of collision m
                     if (comp.collisions[m][1][p]) == comp_product.type:
                     #if the component we are analysing is one of the products of the reaction, we add to the col_term and save its ID
-                        col_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
+                        col_term *= Y[2 * comp_product.ID]/Y[2* comp_product.ID + 1]
                         product.append(comp_product.ID)
             if sigma_v != 0:
-                print('comp', comp.type, 'partner', partner_comp.type, 'sigv', sigma_v)
-                print('Y_comp', Y[i], 'Y_partner', Y[partner_comp.ID], 'Y_eq comp', comp.equilibriumyield(x, mDM), 'Y_eq partner', partner_comp.equilibriumyield(x, mDM))
-                print('H', H)
-                if partner_comp.type not in SM:
+                if partner != 'SM':
                 #for self-annihilation, co-annihilation, and double conversion interactions
-                    reaction_terms[counter] = ((1/(3 * H)) * dsdx * sigma_v * ((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term)))/H
-                    a = ((1/(3 * H)) * dsdx * sigma_v * ((Y[i] * Y[partner_comp.ID]) - (comp.equilibriumyield(x, mDM) * partner_comp.equilibriumyield(x, mDM) * col_term)))/H
-                    print(a)
+                    reaction_terms[counter] = ((1/(3 * H)) * dsdx * sigma_v * ((Y[2* i] * Y[2 * partner_comp.ID]) - (Y[(2*i)+1] * Y[2 * partner_comp.ID + 1] * col_term)))/H
                 else:
                 #for conversion interaction
-                    reaction_terms[counter] = ((1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term))/H
+                    reaction_terms[counter] = ((1/(3 * H)) * dsdx * sigma_v * ((Y[2*i]) - Y[(2*i)+1] * col_term))/H
             counter += 1
     return reaction_terms
                 
