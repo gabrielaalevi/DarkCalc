@@ -11,4 +11,12 @@ set mmys3qu3 510
 set lams3d3x3 0.17
 
 IN MADGRAPH
+import model DMSimp_t-S3D-3rd
+define new = xm b2 b2~
+generate p p > xm xm
+output modelxm-b2-madgraph
+launch modelxm-b2-madgraph
+set mxm 500
+set mys3qu3 510
+set ys3qu3 auto
 
