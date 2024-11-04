@@ -1,0 +1,14 @@
+IN MADDM
+
+import model DMSimp_t-S3D-3rd
+define darkmatter xm
+define coannihilator b2
+generate relic_density
+output modelxm-b2
+launch modelxm-b2
+set mxm 500
+set mmys3qu3 510
+set lams3d3x3 0.17
+
+IN MADGRAPH
+
