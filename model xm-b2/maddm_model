@@ -17,6 +17,6 @@ generate p p > xm xm
 output modelxm-b2-madgraph
 launch modelxm-b2-madgraph
 set mxm 500
-set mys3qu3 510
-set ys3qu3 auto
+set mys3d3 510
+set wys3d3 auto
 
