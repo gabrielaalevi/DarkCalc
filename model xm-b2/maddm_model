@@ -16,7 +16,7 @@ set lams3u3x3 0
 IN MADGRAPH
 import model DMSimp_t-S3M_3rd
 define new = xm b2 b2~
-generate p p > xm xm
+generate p p > b2 b2~
 output modelxm-b2-madgraph
 launch modelxm-b2-madgraph
 set mxm 500
