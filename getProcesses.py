@@ -74,8 +74,8 @@ def find_processes_col(part, x, BSM, nsteps, SM):
     collisions.append(col_selfann)
     col_coann = [BSM[(index_part-1)], [], sigmav_coann]
     collisions.append(col_coann)
-    #col_conversion = ['SM', [BSM[(index_part-1)]], sigmav_coann]
-    #collisions.append(col_conversion)
+    col_conversion = ['SM', [BSM[(index_part-1)]], sigmav_coann]
+    collisions.append(col_conversion)
     print(collisions)
     return collisions
 
@@ -90,13 +90,17 @@ def find_decays(part, param_path):
         daughters = dec.ids
         dec_reaction = [daughters, dec.br]
         decayreactions.append(dec_reaction)
+    print(decayreactions)
     return decayreactions
 
 def find_dof(part_name, part_pdg, param_path):
     param_card=open(param_path, 'r') #opening the param_card
     lines = param_card.readlines() #reading all the lines in the param_card
     pdg = str(part_pdg)
-    header_index = lines.index('BLOCK QNUMBERS ' + pdg + ' #  ' + part_name + '\n') #finding the index of the header for the desired particle in the param_card
+    for row in lines:
+        string = 'BLOCK QNUMBERS ' + pdg
+        if row.find(string) != -1:
+            header_index = lines.index(row)
     spin_line = lines[header_index+2] #finding the index for the spin of the desired particle
     spin_string = spin_line[8] #number of total spin states 2S + 1
     spin_states = int(spin_string)

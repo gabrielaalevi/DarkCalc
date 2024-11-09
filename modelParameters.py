@@ -8,7 +8,7 @@ from components import Component
 #Input from the user
 
 nsteps = 1000000 #number of values of x to be used, max is 5 million
-Tvalues = np.linspace(620, 10, nsteps) #interval of temperatures for the data, in GeV
+Tvalues = np.linspace(500, 5, nsteps) #interval of temperatures for the data, in GeV
 param_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\param_card.dat' #path to the param_card
 
 #In pnames, we have a list of all the particles and some relevant information. Each particle must have a
@@ -21,12 +21,12 @@ param_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\param_card
 # is important to note that there should be only one particle with label 'DM', which will be used to 
 # calculate x.
 
-pnames = [['DM', 'xs', 51,1],
-         ['Coannihilator', 'xv', 53,1]] #list of the BSM particles present on the model
+pnames = [['DM', 'xm', 52,1],
+         ['Coannihilator', 'b2', 2000005,1]] #list of the BSM particles present on the model
 
-debug_version = True #if true, the output includes the value of the term in the Boltzmann Equation for each
+debug_version = False #if true, the output includes the value of the term in the Boltzmann Equation for each
 #reaction, allowing for a better analysis of the result
-name_file = 'model xs-xv' #name of the output file
+name_file = 'model xm-b2' #name of the output file
 #non-input
 
 #list containing the SM particles
@@ -63,8 +63,8 @@ for i in range(0, len(pnames)):
         part_mass = param_card.blocks['MASS'][part_pdg]
         part = pnames[i][1]
         col_processes = find_processes_col(part, x, BSM, nsteps, SM)
-        part_width = 0 #param_card.decays[part_pdg].totalwidth
-        dec_reactions = 0 #find_decays(part_pdg, param_path)
+        part_width = param_card.decays[part_pdg].totalwidth
+        dec_reactions = find_decays(part_pdg, param_path)
         dof = find_dof(part, part_pdg, param_path)
         comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], i, pnames[i][3], part_mass, dof, x, col_processes,part_width, dec_reactions)
     comp_names.append(comp)

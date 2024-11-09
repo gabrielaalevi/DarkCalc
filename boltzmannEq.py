@@ -27,7 +27,6 @@ def boltz(x, Y, comp_names, SM, mDM, x_new):
             #loop parsing through all the possible decays of component i
                 dec_term = 1
                 product = []
-                print('Decayyyy')
                 for l in range(0, len(comp.decayreactions[j][0])):
                 #loop parsing through the products of decay j
                     for k in range(0, len(comp_names)):
@@ -37,6 +36,8 @@ def boltz(x, Y, comp_names, SM, mDM, x_new):
                             dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
                             product.append(comp_product.ID)
                 dY[i] += (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
+                a = (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
+                print('comp', comp.type, 'products', product, 'a', a)
                 for l in range(0, len(product)):
                 #adding the correspondent source term to the dY equation of each product
                     dY[(product[l])] += - (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM)* dec_term)
@@ -71,6 +72,10 @@ def boltz(x, Y, comp_names, SM, mDM, x_new):
                 else:
                 #for conversion interaction
                     dY[i] += (1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
+                    a = (1/(3 * H)) * dsdx
+                    b = (1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
+                    print('x', x, 'comp', comp.type, 'partner', partner, 'sigv', sigma_v, 'Y_comp', Y[i], 'Y_eq comp', comp.equilibriumyield(x, mDM), 'Y_part', Y[partner_comp.ID], 'Y_eq part', partner_comp.equilibriumyield(x, mDM), 'col term', col_term, '1/3h dsdx', a)
+                    print(b)
                     for p in range(0, len(product)):
                         dY[product[p]] += -(1/(3 * H)) * dsdx * sigma_v * ((Y[i]) - comp.equilibriumyield(x, mDM) * col_term)
     print('x', x, 'dY', dY)
@@ -116,7 +121,7 @@ def debug_func(x, Y, comp_names, SM, mDM, x_new):
                         if (comp.decayreactions[j][0][l]) == comp_product.PDG:
                             dec_term *= Y[2* comp_product.ID]/Y[2 * comp_product.ID + 1]
                             product.append(comp_product.ID)
-                reaction_terms[counter] = ((kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[2*i] - Y[(2*i+1)] *dec_term))/H
+                reaction_terms[counter] = ((1/(3 * H))*(kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[2*i] - Y[(2*i+1)] *dec_term))/H
                 counter += 1
     #collision term for component i
         for m in range(0, len(comp.collisions)):
