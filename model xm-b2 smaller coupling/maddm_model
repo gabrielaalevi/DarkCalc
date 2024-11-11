@@ -7,7 +7,7 @@ generate relic_density
 output modelxm-b2
 launch modelxm-b2
 set mxm 500
-set mmys3qu3 510
+set mys3qu3 510
 set lams3d3x3 2.6e-07
 set lams3q3x3 0
 set lams3u3x3 0
