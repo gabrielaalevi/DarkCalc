@@ -7,9 +7,9 @@ from components import Component
 
 #Input from the user
 
-nsteps = 1000000 #number of values of x to be used, max is 5 million
+nsteps = 10000 #number of values of x to be used, max is 5 million
 Tvalues = np.linspace(620, 10, nsteps) #interval of temperatures for the data, in GeV
-param_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\param_card.dat' #path to the param_card
+param_path = r'./pp2b2b2/Cards/param_card.dat' #path to the param_card
 
 #In pnames, we have a list of all the particles and some relevant information. Each particle must have a
 #line in the matrix assigned to them, with 5 different elements. The elements should be, in order: label (string)
