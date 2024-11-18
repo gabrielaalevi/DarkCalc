@@ -1,0 +1,6 @@
+import model DMSimp_t
+define darkmatter xd
+generate relic_density
+output modelxd-freezeout
+launch modelxd-freezeout
+set mxd 1300
