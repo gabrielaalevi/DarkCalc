@@ -47,3 +47,15 @@ On modelParameters, input all the necessary information. They are:
  8. ``name_file``: name that should be used to save the files, as a string.
 
 To run the code from a separated python/jupyter notebook file, it is necessary to use 'from boltzSolver import Y'. To run it directly from the command prompt, it is necessary to run the boltzSolver file, which will automatically run the other necessary files.
+
+
+### Equations
+
+
+<p float="left">
+    <img src="./figures/boltzEqs.png" alt="Boltzmann Equations" width=100% height=100% />
+</p>
+
+<p float="left">
+    <img src="./figures/hubbleExpr.png" alt="Hubble Rate" width=30% height=30% />
+</p>

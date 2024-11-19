@@ -2,45 +2,51 @@
 
 import numpy as np
 from scipy.special import kn
-import auxFunc
+import thermal.equilibriumDensities as eqDensitities
+from components import Component
+from typing import List,Dict
 
-def boltz(x, Y, comp_names, SM, mDM, x_new):
-    dY = np.zeros(len(comp_names)) #list with all the rhs for all the components, ordered as in the comp_list
-    H = auxFunc.hubblerate(x, mDM) #hubble rate at temperature T
-    s = auxFunc.entropydensity(x, mDM) #entropy density at temperature T
-    dsdx = auxFunc.dsdx(x, mDM) #variation of entropy with x
+def boltz(x: float, Y : List[float], compDict : Dict[int,Component], mDM : float):
+    """
+    Boltzmann equations for the BSM components. Assumes the energy density is dominated by radiation
+    and the SM degrees of freedom.
+
+    :param x: Evolution variable, x = mDM/T
+    :param Y: List of yields for each BSM componnent
+    :param compDict: Dictionary with PDG as keys and Component objects as values
+    :param mDM: Dark Matter mass    
+    """
+
     T = mDM/x
-    for i in range(0, len(comp_names)):
-    #loop parsing through all components
-        comp = comp_names[i]
-        tol = abs(x - x_new[0])
-        index = 0
-        for p in range(0, len(x_new)):
-        #loop to find the value of x closest to the one being used by odeint, necessary to call the right element of the cross section and decay width arrays
-            diff = abs(x - x_new[p])
-            if diff < tol:
-                index = p
-                tol = diff
-        #decay term for component i
-        if comp.decayreactions != 0:
-            for j in range(0, len(comp.decayreactions)):
-            #loop parsing through all the possible decays of component i
-                dec_term = 1
-                product = []
-                for l in range(0, len(comp.decayreactions[j][0])):
-                #loop parsing through the products of decay j
-                    for k in range(0, len(comp_names)):
-                        #loop parsing through all the components, to see which ones are products in the decay
-                        comp_product = comp_names[k]
-                        if (comp.decayreactions[j][0][l]) == comp_product.PDG:
-                            dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
-                            product.append(comp_product.ID)
-                dY[i] += (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
-                a = (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
-                print('comp', comp.type, 'products', product, 'a', a)
-                for l in range(0, len(product)):
-                #adding the correspondent source term to the dY equation of each product
-                    dY[(product[l])] += - (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM)* dec_term)
+    dY = np.zeros(len(compDict)) #list with all the rhs for all the components, ordered as in the comp_list
+    H = eqDensitities.H(T) #hubble rate at temperature T
+    s = eqDensitities.S(T) #entropy density at temperature T
+    dsdx = eqDensitities.dSdx(x, mDM) #variation of entropy with x
+    
+    #loop over all components
+    for comp in compDict.values():
+        if comp.decays is None:
+            continue
+        if not comp.totalwidth:
+            continue
+        #loop over all the possible decays of component i
+        for daughter_pdgs,br in comp.decays.items():
+            dec_term = 1
+            products = [compDict[pdg] for pdg in daughter_pdgs]
+            for l in range(0, len(comp.decayreactions[j][0])):
+            #loop parsing through the products of decay j
+                for k in range(0, len(comp_names)):
+                    #loop parsing through all the components, to see which ones are products in the decay
+                    comp_product = comp_names[k]
+                    if (comp.decayreactions[j][0][l]) == comp_product.PDG:
+                        dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
+                        product.append(comp_product.ID)
+            dY[i] += (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
+            a = (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
+            print('comp', comp.type, 'products', product, 'a', a)
+            for l in range(0, len(product)):
+            #adding the correspondent source term to the dY equation of each product
+                dY[(product[l])] += - (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM)* dec_term)
         
     #collision term for component i
         for m in range(0, len(comp.collisions)):
@@ -92,9 +98,9 @@ def debug_func(x, Y, comp_names, SM, mDM, x_new):
     reaction_terms = np.zeros((nofreactions+1))
     reaction_terms[0] = x
     counter = 1 #counting all the reactions that have been saved
-    H = auxFunc.hubblerate(x, mDM) #hubble rate at temperature T
-    s = auxFunc.entropydensity(x, mDM) #entropy density at temperature T
-    dsdx = auxFunc.dsdx(x, mDM) #variation of entropy with x
+    H = equilibriumDensities.hubblerate(x, mDM) #hubble rate at temperature T
+    s = equilibriumDensities.entropydensity(x, mDM) #entropy density at temperature T
+    dsdx = equilibriumDensities.dsdx(x, mDM) #variation of entropy with x
     T = mDM/x
     tol = abs(x - x_new[0])
     index = 0
