@@ -51,11 +51,4 @@ To run the code from a separated python/jupyter notebook file, it is necessary t
 
 ### Equations
 
-
-<p float="left">
-    <img src="./figures/boltzEqs.png" alt="Boltzmann Equations" width=100% height=100% />
-</p>
-
-<p float="left">
-    <img src="./figures/hubbleExpr.png" alt="Hubble Rate" width=30% height=30% />
-</p>
+For the analytical form of the Boltzmann equations used in the code see [Boltzmann Equations](./boltzEqs.md)
