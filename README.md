@@ -100,7 +100,7 @@ In the [Examples directory](./Examples), there are plenty of example models that
 
 ## Solving the Boltzmann Equations
 
-1. Download all the files on the main directory, and store them in the same folder.
+1. Download all the .py files on the main directory, and store them in the same folder.
 
 ### Input Parameters
 
@@ -250,6 +250,8 @@ pnames = [['DM', 'xm', 52,1],
 23. It is possible to create a file with the values of the reaction rate for each participating reaction in the model, for each value of x. To do so, change the ``debug_version`` parameter to True. Be aware that this means the code will take longer to run.
 24. Lastly, change the ``name_file`` parameter to a string. This text will be used to name the files created by the code, so it is important to use clear names that describe the model succinctly.
 25. Then, run the notebook created in step 17.
+
+All the files created in this process, along with an script to plot the yields in a graph using matplotlib, can be found in [CDFO - Example 1](./Examples/CDFO-Example 1)
 
 
 
