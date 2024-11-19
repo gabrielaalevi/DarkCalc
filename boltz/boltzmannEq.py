@@ -32,21 +32,14 @@ def boltz(x: float, Y : List[float], compDict : Dict[int,Component], mDM : float
         #loop over all the possible decays of component i
         for daughter_pdgs,br in comp.decays.items():
             dec_term = 1
-            products = [compDict[pdg] for pdg in daughter_pdgs]
-            for l in range(0, len(comp.decayreactions[j][0])):
-            #loop parsing through the products of decay j
-                for k in range(0, len(comp_names)):
-                    #loop parsing through all the components, to see which ones are products in the decay
-                    comp_product = comp_names[k]
-                    if (comp.decayreactions[j][0][l]) == comp_product.PDG:
-                        dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
-                        product.append(comp_product.ID)
-            dY[i] += (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
-            a = (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
-            print('comp', comp.type, 'products', product, 'a', a)
-            for l in range(0, len(product)):
+            daughters = [compDict[pdg] for pdg in daughter_pdgs]
+            dec_term = br*np.prod([Y[daughter.ID]/daughter.Yeq(T) for daughter in daughters])
+            gamma = (kn(1,comp.mass/T)/kn(2,comp.mass/T))
+            dY[comp.ID] -=  gamma*(comp.totalwidth/s)*(Y[comp.ID] - comp.Yeq(T)*dec_term)
+            ##### STOPPED HERE!!!!!!!!!!!!!!!!!! -> MISSING BR FACTOR!!!
+            for daughter in daughters:
             #adding the correspondent source term to the dY equation of each product
-                dY[(product[l])] += - (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM)* dec_term)
+                dY[daughter.ID] += + gamma*(comp.decaywidth/s)*(Y[i] - comp.equilibriumyield(x, mDM)* dec_term)
         
     #collision term for component i
         for m in range(0, len(comp.collisions)):
