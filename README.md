@@ -3,7 +3,7 @@
 
 In order to compute the number density for an specific model, it is necessary to:
 
- 1. Instal MadGraph with MadDM
+ 1. Install MadGraph with MadDM
  2. Copy the files [MadDM/get_taacs.f](./MadDM/get_taacs.f), [MadDM/maddm.f](./MadDM/maddm.f) and [MadDM/makefile](MadDM/makefile)  to ``MG5/PLUGIN/maddm/Templates/src/``.
 
 The above steps can also be done running [installer.sh](./installer.sh)
@@ -44,7 +44,7 @@ import DMSimp_t
 
 7. Create a multiparticle class with all the existing BSM particles in the model (along with their antiparticles, if they exist).
 
-For example, imagine we want to use the DMSimp_t framework to run a model where the BSM particles are a Dirac fermion and a real scalar. In the DMSimp_t framework, the Dirac fermion is denoted by 'xd', and the real scalar is denoted by 'xs'. Then, we create a multiparticle class (which we will call 'new') by inputing:
+For example, imagine we want to use the DMSimp_t framework to run a model where DM is a Dirac fermion, and we have an extra BSM particle, that interacts with DM, that is a real scalar. In the DMSimp_t framework, the Dirac fermion is denoted by 'xd', and the real scalar is denoted by 'xs'. Then, we create a multiparticle class (which we will call 'new') by inputing:
 
 ```
 new = xd xd~ xs
@@ -65,8 +65,11 @@ output (modelname-madgraph)
 launch (modelname-madgraph)
 ```
 It is important to note that the model files created by MadDM and by MadGraph are stored in the same folder. Hence, if they are saved under the same name, the MadGraph files will replace the MadDM files. It is recommended to use different names in each program.
+
 9. The first message MadGraph shows concerns which features from MadGraph will be used. We do not need to alter anything in this part. Press enter, you should then get a message asking if you would like to change parameters in the param_card.
+
 10. Change the model parameters to be the same as used in the MadDM model, when concerning mass and couplings.
+
 11. For each BSM particle that can decay in the model, change their decay width to 'auto'.
 
 For our example, if we wanted the Dirac fermion to decay, we would input:
@@ -81,7 +84,7 @@ Otherwise, it is possible to insert '1' to alter the param_card by hand, using v
 
 Some models have different notations on how to call each particle. In case there is any confusion about different notations, it is recommended to look at the [PDG code](https://pdg.lbl.gov/2020/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle in question, and look at the param_card (by pressing 1) to see the correct denomination for the model. For this, look for the 'MASS BLOCK' in the param_card, and search for the PDG code of the particle in question. The PDG codes are in the beggining of each line, and organized in ascending order. After finding the desired PDG code, look at the end of the line. There will be a blue text, preeceded by a '#' symbol. It will be 'm' + the name of the particle in the model.
 
-For example, the left-handed scalar partner of the bottom quark is called b1 in the Monte Carlo Particle Numbering Scheme, and its PDG is 1000005. Looking at the param_card, we find:
+For example, the left-handed scalar partner of the bottom quark is called b1 in the Monte Carlo Particle Numbering Scheme, and its PDG is 1000005. Looking at the param_card produced by the DMSimp_t framework, we find:
 
 ![image](https://github.com/user-attachments/assets/b52e80a0-ee2f-49ea-a226-32ac819f2970)
 
@@ -124,7 +127,7 @@ To run the code, create a separated jupyter notebook and write:
 from boltzSolver import Y
 ```
 
-This will create a csv file, named using the ``name_file`` parameter. It will contain all the values of x used for calculation, as well as the yields and equilibrium yields for all the active particles in the model. For each model in the [Examples](./Examples) folder, we have a ``main_example`` notebook file, which has the instructions to run the code and then plot a graph of the yields per x.
+When running the notebook, it will create a csv file, named using the ``name_file`` parameter. It will contain all the values of x used for calculation, as well as the yields and equilibrium yields for all the active particles in the model. For each model in the [Examples](./Examples) folder, we have a ``main_example`` notebook file, which has the instructions to run the code and then plot a graph of the yields per x.
 
 ## Example
 
@@ -205,7 +208,7 @@ generate p p > b2 b2~
 
 ```
 output (modelname-madgraph)
-launch(modelname-madgraph)
+launch (modelname-madgraph)
 ```
 
 14. You will receive a message about the different modules of MadGraph available for use. We will not need to change anything in this step. Press enter, and you should receive a message asking if you would like to change the model's parameters.
