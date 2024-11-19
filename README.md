@@ -77,10 +77,14 @@ Otherwise, it is possible to insert '1' to alter the param_card by hand, using v
 Some models have different notations on how to call each particle. In case there is any confusion about different notations, it is recommended to look at the [PDG code](https://pdg.lbl.gov/2020/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle in question, and look at the param_card (by pressing 1) to see the correct denomination for the model. For this, look for the 'MASS BLOCK' in the param_card, and search for the PDG code of the particle in question. The PDG codes are in the beggining of each line, and organized in ascending order. After finding the desired PDG code, look at the end of the line. There will be a blue text, preeceded by a '#' symbol. It will be 'm' + the name of the particle in the model.
 
 For example, the left-handed scalar partner of the bottom quark is called b1 in the Monte Carlo Particle Numbering Scheme, and its PDG is 1000005. Looking at the param_card, we find:
+
 ![image](https://github.com/user-attachments/assets/b52e80a0-ee2f-49ea-a226-32ac819f2970)
 
+Hence, the name of this particle in this model is ys3qd3. If we wanted to calculate the decay width for this particle, we would run:
 
-
+```
+set wys3qd3 auto
+```
 
 12. Once you are done changing the model's parameters, press enter and let MadGraph run.
 
@@ -109,7 +113,13 @@ On modelParameters, input all the necessary information. They are:
 
  8. ``name_file``: name that should be used to save the files, as a string.
 
-To run the code from a separated python/jupyter notebook file, it is necessary to use 'from boltzSolver import Y'. To run it directly from the command prompt, it is necessary to run the boltzSolver file, which will automatically run the other necessary files.
+To run the code, create a separated jupyter notebook and write:
+
+```
+from boltzSolver import Y
+```
+
+This will create a csv file, named using the ``name_file`` parameter. It will contain all the values of x used for calculation, as well as the yields and equilibrium yields for all the active particles in the model. For each model in the [Examples](./Examples) folder, we have a ``main_example`` notebook file, which has the instructions to run the code and then plot a graph of the yields per x.
 
 ## Example
 
@@ -194,7 +204,7 @@ launch(modelname-madgraph)
 ```
 
 14. You will receive a message about the different modules of MadGraph available for use. We will not need to change anything in this step. Press enter, and you should receive a message asking if you would like to change the model's parameters.
-15. Input the same parameters as used in MadDM. In this phase, it is possible that some particles change their denomination, due to a difference in notation between the two programs. 
+15. Input the same parameters as used in MadDM, paying attention to possible notation differences.
 ```
 set mxm 500
 set mmys3qu3 510
@@ -202,6 +212,38 @@ set lams3d3x3 0.17
 set lams3q3x3 0
 set lams3u3x3 0
 ```
+16. Press enter and wait for MadGraph to finish running.
+
+Now, we will start running our code. 
+
+17. In the same folder as the other .py files have been downloaded, create a notebook and write:
+
+```
+from boltzSolver import Y
+```
+
+18. In the ``modelParameters`` file, change the ``T_i`` and ``T_f`` parameters to:
+
+```
+T_i = 500
+T_f = 5
+```
+
+19. In the ``modelParameters`` file, change the ``taacs_path`` parameter to the path of the 'taacs.csv' file in your device.
+20. In the ``modelParameters`` file, change the ``processes_path`` parameter to the path of the 'processes_taacs.csv' file in your device.
+21. In the ``modelParameters`` file, change the ``param_path`` parameter to the path of the 'param_card.dat' file in your device. It can be found in MG5>bin>(modelname-madgraph)>Cards.
+
+22. In the ``modelParameters`` file, change the ``pnames`` matrix to:
+
+```
+pnames = [['DM', 'xm', 52,1],
+         ['Mediator', 'b2', 1000005,1]]
+```
+23. It is possible to create a file with the values of the reaction rate for each participating reaction in the model, for each value of x. To do so, change the ``debug_version`` parameter to True. Be aware that this means the code will take longer to run.
+24. Lastly, change the ``name_file`` parameter to a string. This text will be used to name the files created by the code, so it is important to use clear names that describe the model succinctly.
+25. Then, run the notebook created in step 17.
+
+
 
 
 
