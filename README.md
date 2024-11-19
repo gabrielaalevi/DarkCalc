@@ -251,7 +251,7 @@ pnames = [['DM', 'xm', 52,1],
 24. Lastly, change the ``name_file`` parameter to a string. This text will be used to name the files created by the code, so it is important to use clear names that describe the model succinctly.
 25. Then, run the notebook created in step 17.
 
-All the files created in this process, along with an script to plot the yields in a graph using matplotlib, can be found in [CDFO - Example 1](./Examples/CDFO-Example 1)
+All the files created in this process, along with an script to plot the yields in a graph using matplotlib, can be found in [CDFO-1 directory](Examples/CDFO-1).
 
 
 
