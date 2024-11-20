@@ -55,37 +55,24 @@ class Component(object):
         return yeq    
     
 
-class CollisionProcesses(object):
+
+class CollisionProcess(object):
+    """
+    Holds information about a single process and its thermally average cross-section
+    """
 
 
-    def __init__(self):
+    def __init__(self,initialPDGs : List[int] = [], finalPDGs : List[int] = []):
         
-        self._processes = {}
-    
-    def addProcess(self, Tlist : List[float], collisionData : List[float], 
-                    initialStates : List["Component"], finalStates : List["Component"]) -> None:
-        
-        initialPDGs = sorted([comp.PDG for comp in initialStates])
-        finalPDGs = sorted([comp.PDG for comp in finalStates])
-        sigmaF = interp1d(Tlist,collisionData,fill_value=0.0,bounds_error=False)
-        if not initialPDGs in self._processes:
-            self._processes[initialPDGs] = {}
-        self._processes[initialPDGs][finalPDGs] = sigmaF
+        self.initialPDGs = initialPDGs
+        self.finalPDGs = finalPDGs
+        self.sigmaV = lambda T: 0.0
 
-    def sigmaV(self,T: float, 
-                initialStates : List["Component"], 
-                finalStates : List["Component"]) -> float:
+    def setSigmaV(self, Tlist : List[float], data : List[float]):
 
-        initialPDGs = sorted([comp.PDG for comp in initialStates])
-        if not initialPDGs in self._processes:
-            return None
-        finalPDGs = sorted([comp.PDG for comp in finalStates])
-        if not finalPDGs in self._processes[initialPDGs]:
-            return None
-        
-        sv = self._processes[initialPDGs][finalPDGs](T)
+        sigmaV = interp1d(Tlist,data,fill_value=0.0,bounds_error=False)
+        self.sigmaV = sigmaV
 
-        return sv
-        
+
 
         
