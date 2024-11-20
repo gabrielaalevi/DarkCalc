@@ -9,13 +9,12 @@ from scipy.interpolate import interp1d
 class Component(object):
     #class to hold the main characteristics of each component
 
-    def __init__(self, label, type, PDG, ID, mass, g):
+    def __init__(self, label, PDG, ID, mass, g):
         self.label = label
-        self.type = type
         self.PDG = PDG
         self.ID = ID
         self.mass = mass
-        self.g = g
+        self.g = lambda T : g # For convenience set it as a dummy function
         self.totalwidth = 0.0
         self.decays = None
 
@@ -36,7 +35,7 @@ class Component(object):
         :param g: Particle's degrees of freedom. Use g < 0 for bosons and g > 0 for fermions
 
         """
-        neq = Neq(T, self.mass, self.g)
+        neq = Neq(T, self.mass, self.g(T))
         
         return neq
     
@@ -50,7 +49,7 @@ class Component(object):
         :param g: Particle's degrees of freedom. Use g < 0 for bosons and g > 0 for fermions
 
         """
-        yeq = Yeq(T, self.mass, self.g)
+        yeq = Yeq(T, self.mass, self.g(T))
         
         return yeq    
     
