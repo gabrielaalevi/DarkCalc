@@ -2,7 +2,7 @@
 #this module sets the main characteristics for all the involved particles
 
 from thermal.equilibriumDensities import Neq, Yeq
-from typing import List, Tuple, Dict
+from typing import List, Dict, Optional
 from scipy.interpolate import interp1d
 
 
@@ -61,16 +61,27 @@ class CollisionProcess(object):
     """
 
 
-    def __init__(self,initialPDGs : List[int] = [], finalPDGs : List[int] = []):
+    def __init__(self,initialPDGs : List[int] = [], finalPDGs : List[int] = [], 
+                 name : Optional[str] = "") -> None:
         
-        self.initialPDGs = initialPDGs
-        self.finalPDGs = finalPDGs
-        self.sigmaV = lambda T: 0.0
+        self.initialPDGs = sorted(initialPDGs)
+        self.finalPDGs = sorted(finalPDGs)
+        self.sigmaV = lambda x: 0.0
+        self.name = name
 
-    def setSigmaV(self, Tlist : List[float], data : List[float]):
+    def setSigmaV(self, xlist : List[float], sigmavList : List[float]):
 
-        sigmaV = interp1d(Tlist,data,fill_value=0.0,bounds_error=False)
+        sigmaV = interp1d(xlist,sigmavList,fill_value=0.0,bounds_error=False)
         self.sigmaV = sigmaV
+
+    def __str__(self):
+        
+        proc_str = f'{self.name}:{tuple(self.initialPDGs)} -> {tuple(self.finalPDGs)}'
+
+        return proc_str
+    
+    def __repr__(self):
+        return str(self)
 
 
 

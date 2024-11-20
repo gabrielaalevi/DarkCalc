@@ -2,15 +2,11 @@
 
 import numpy as np
 import pyslha
-from getProcesses import find_processes_col, find_decays, find_dof
-from components import Component
+from components import Component, CollisionProcess
 from typing import List, Dict
 import logging as logger
 
-#Input from the user
-
-def getModelData(paramCard : str, bsmPDGList : List[int]):
-
+def getModelData(paramCard : str, bsmPDGList : List[int]) -> Dict[int,Component]:
 
     # Get information from the param_card
     particle_data = pyslha.read(paramCard)
@@ -19,7 +15,7 @@ def getModelData(paramCard : str, bsmPDGList : List[int]):
     # We need a separate method to get the quantum numbers and particle labels
     qnumbers = getQnumbers(paramCard)
 
-
+    
     # Now restrict to the pdgs in bsmPDGList
     compDict = {}
     for pdg in bsmPDGList:
@@ -42,10 +38,6 @@ def getModelData(paramCard : str, bsmPDGList : List[int]):
         compDict[pdg] = comp
 
     return compDict
-
-
-
-
 
 def getQnumbers(paramCard : str) -> Dict[int,Dict]:
 
@@ -83,50 +75,38 @@ def getQnumbers(paramCard : str) -> Dict[int,Dict]:
 
     return pdgDict
 
-pnames = [['DM', 'xm', 52,1],
-         ['Coannihilator', 'b2', 2000005,1]] #list of the BSM particles present on the model
+def getCollisionProcesses(sigmaVfile : str) -> List[CollisionProcess]:
 
-debug_version = False #if true, the output includes the value of the term in the Boltzmann Equation for each
-#reaction, allowing for a better analysis of the result
-name_file = 'model xm-b2' #name of the output file
-#non-input
+    
+    # Get process dictionary
+    with open(sigmaVfile) as f:
+        comment_lines =  [l.strip() for l in f.readlines() if l.strip()[0] == '#']
+        proc_lines = [l[1:].strip() for l in comment_lines if (l.count('#') == 1)]
+    processDict = {}
+    for l in proc_lines:    
+        proc_index,proc_name,proc_pdgs = (l.split(',',2))
+        proc_pdgs = proc_pdgs.replace('[','').replace(']','')
+        initialPDGs,finalPDGs = proc_pdgs.split('_')
+        processDict[proc_index] = {'name' : proc_name.strip(), 
+                                'initialPDGs' : list(map(int, initialPDGs.split(','))), 
+                                'finalPDGs' : list(map(int, finalPDGs.split(',')))}
+    processes_data = np.genfromtxt(sigmaVfile, delimiter=',', skip_header=len(comment_lines), 
+                                   names=True)
+    collisions = []
+    for proc_index,pInfo in processDict.items():
+        process = CollisionProcess(initialPDGs=pInfo['initialPDGs'],
+                                   finalPDGs=pInfo['finalPDGs'],
+                                   name=pInfo['name'])
+        process.setSigmaV(xlist=processes_data['x'],
+                          sigmavList=processes_data[proc_index])
 
-#list containing the SM particles
-SM = ['u', 'ux', 'd', 'dx', 'c', 'cx', 's', 'sx', 't', 'tx', 'b', 'bx', 'g', 'z', 'h', 'em', 'ep', 've', 'vex', 'mup', 'mum', 'vm', 'vmx', 'tap', 'tam', 'vt', 'vtx', 'a', 'wm', 'wp']
-#creating a list with the BSM particles considered in the model
-BSM = list()
-for i in range(0, len(pnames)):
-    part = pnames[i][1]
-    BSM.append(part)
-#using Pyslha to read the param_card
+        collisions.append(process)
 
+    return collisions
 
-#creating the array of x, using the DM mass and the Tvalues
-for i in range(0, len(pnames)):
-    if pnames[i][0] == 'DM':
-        part_pdg = pnames[i][2]
-        part_mass = param_card.blocks['MASS'][part_pdg]
-        x = part_mass/Tvalues
-        mDM = part_mass
+def loadInput(paramCard : str, sigmaVfile : str, dmPDG : int, bsmPDGList : List[int]):
 
-comp_names = [] #list to hold all the components
-#loop to create each component, using the information from pnames, param_card and taacs.csv
-for i in range(0, len(pnames)):
-    col_processes = 0
-    if pnames[i][0] == 'DM':
-        part_pdg = pnames[i][2]
-        part_mass = param_card.blocks['MASS'][part_pdg]
-        part = pnames[i][1]
-        col_processes = find_processes_col(part, x, BSM, nsteps, SM)
-        dof = find_dof(part, part_pdg, param_path)
-        comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], i, pnames[i][3],  part_mass, dof, x, col_processes,0, 0)
-    else:
-        part_pdg = pnames[i][2]
-        part_mass = param_card.blocks['MASS'][part_pdg]
-        part = pnames[i][1]
-        col_processes = find_processes_col(part, x, BSM, nsteps, SM)
-        part_width = param_card.decays[part_pdg].totalwidth
-        dec_reactions = find_decays(part_pdg, param_path)
-        dof = find_dof(part, part_pdg, param_path)
-        comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], i, pnames[i][3], part_mass, dof, x, col_processes,part_width, dec_reactions)
-    comp_names.append(comp)
+    compDict = getModelData(paramCard,bsmPDGList=bsmPDGList)
+    collisions = getCollisionProcesses(sigmaVfile)
+
+    return compDict,collisions

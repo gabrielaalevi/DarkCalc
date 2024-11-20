@@ -18,6 +18,8 @@ if echo "$answer" | grep -iq "^y" ;then
 	sed  "s|homeDIR|$homeDIR|g" mg5_configuration.txt > ./MG5/input/mg5_configuration.txt;
 	echo "[installer] replacing MadDM files"
 	cp MadDM/get_taacs.f MadDM/maddm.f MadDM/makefile MG5/PLUGIN/maddm/Templates/src/;
+	cp MadDM/MGoutput.py MG5/PLUGIN/maddm/;
+	cp MadDM/maddm.inc MG5/PLUGIN/maddm/python_templates/;
 fi
 
 cd $currentDIR
