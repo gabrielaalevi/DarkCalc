@@ -4,7 +4,7 @@ import numpy as np
 from scipy.special import kn
 import thermal.equilibriumDensities as eqDensitities
 from modelData import ModelData
-from typing import List,Dict
+from typing import List
 
 def boltz(x: float, Y : List[float], model : ModelData):
     """
@@ -13,13 +13,12 @@ def boltz(x: float, Y : List[float], model : ModelData):
 
     :param x: Evolution variable, x = mDM/T
     :param Y: List of yields for each BSM componnent (zero component is the SM)
-    :param compDict: Dictionary with PDG as keys and Component objects as values
-    :param mDM: Dark Matter mass
-    :param collisions: CollisionProcesses object holding all the relevant thermally averaged collision cross-sections
+    :param model: Model data object holding information about the particles and collision processes.
     """
 
     mDM = model.mDM
     compDict = model.componentsDict
+    mDM = compDict[model.dmPDG].mass
     T = mDM/x
     # The zero component is the SM, so we set dY = 0 and Y = Yeq always
     Y[0] = compDict[0].Yeq(T)
@@ -30,7 +29,7 @@ def boltz(x: float, Y : List[float], model : ModelData):
 
     # Pre-compute relevant decay terms:
     Dij = np.zeros((len(Y),len(Y)))
-    for comp_i in enumerate(compDict.values()):
+    for comp_i in compDict.values():
         if comp_i.ID == 0: # skip SM
             continue
         if comp_i.decays is None:
@@ -55,7 +54,7 @@ def boltz(x: float, Y : List[float], model : ModelData):
         Yratio[comp.ID] = Y[comp.ID]/comp.Yeq(T)
         
     #loop over all components
-    dY = np.zeros(Y) #list with all the rhs for all the components, ordered as in the comp_list
+    dY = np.zeros(len(Y)) #list with all the rhs for all the components, ordered as in the comp_list
     for comp_i in compDict.values():        
         i = comp_i.ID
         if i == 0:

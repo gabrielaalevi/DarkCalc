@@ -168,7 +168,7 @@ class ModelData(object):
                 continue
             particleInfo = qnumbers[pdg]
             if pdg in massDict:
-                mass = massDict
+                mass = massDict[pdg]
             else:
                 mass = 0.0
                 logger.info(f'Mas for particle {pdg} not found in {paramCard}. Setting the mass to zero')

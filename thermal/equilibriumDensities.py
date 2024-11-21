@@ -64,9 +64,9 @@ def Neq(T: float, m: float, g: int) -> float:
     #and s represents entropy density.
     
 
-    xm = m/T        
+    xm = m/T     
     if xm > 10: #non-relativistic regime
-        coeffs = [1,15./8.,105./128.,-315/1024.,10395./32768.]
+        coeffs = [1,15./8.,105./128.,-315./1024.,10395./32768.]
         neq = (m**3*exp(-xm)/(xm**(3/2)))*(1/(2*sqrt(2)*pi**(3/2)))
         neq = neq*sum([c/xm**i for i,c in enumerate(coeffs)])
     elif xm > (2./3.): #semi-relativistic regime
