@@ -187,7 +187,7 @@ class ModelData(object):
                proc.finalPDGs = [x if x in self.pdgList else 0 for x in finalPDGs ]
 
 
-    def getQnumbers(self,paramCard : str) -> Dict[int,Dict]:
+    def getQnumbersFrom(self,paramCard : str) -> Dict[int,Dict]:
 
         with open(paramCard,'r') as f:
             data = f.read()
@@ -220,6 +220,8 @@ class ModelData(object):
                 elif k == 4:
                     pdgDict[pdg]['anti-particle'] = val # val =0, means the particle is its anti-particle
             pdgDict[pdg]['dof'] = pdgDict[pdg]['spin']*pdgDict[pdg]['color']*(2**pdgDict[pdg]['anti-particle'])
+            if pdgDict[pdg]['spin']%2 == 0:
+                pdgDict[pdg]['dof'] = -pdgDict[pdg]['dof'] # Set g < 0 for fermions
 
         return pdgDict
 

@@ -73,7 +73,7 @@ def Neq(T: float, m: float, g: int) -> float:
         neq = m**3*(1/(2*pi**2))*kn(2, xm)/xm
     else: #relativistic regime
         neq = (zeta(3)/pi**2)*T**3 # bosons
-        if g > 0:
+        if g < 0:
            neq = (3/4)*neq # fermions
             
     neq = abs(g)*neq
