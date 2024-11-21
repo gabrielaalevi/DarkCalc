@@ -92,7 +92,7 @@ def Yeq(T: float, m: float, g: int) -> float:
     """
     
     
-    s = s(T) #entropy density
+    s = S(T) #entropy density
     neq = Neq(T,m,g)
     yeq = neq/s
     return yeq

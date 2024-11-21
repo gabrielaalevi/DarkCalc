@@ -4,10 +4,9 @@
 from thermal.equilibriumDensities import Neq, Yeq, gstar
 from typing import List, Dict, Optional
 from scipy.interpolate import interp1d
-from boltzLogging import logger
+from boltz.boltzLogging import logger
 import numpy as np
 import pyslha
-from modelData import Component, CollisionProcess
 from typing import List, Dict
 
 
@@ -127,7 +126,7 @@ class ModelData(object):
             logger.error(f"The BSM particles should be defined with positive PDGs!")
             raise ValueError()
         
-        smComponent = Component(label='SM',PDG=0, mass = 0.0, g = 1.0)
+        smComponent = Component(label='SM',PDG=0, mass = 0.0, g = 1.0, ID = 0)
         # The a dynamical number of degrees of freedom for the SM
         smComponent.g = gstar
         self.componentsDict : Dict[int,Component] = {0 : smComponent}
@@ -140,17 +139,30 @@ class ModelData(object):
         if sigmaVfile is not None:
             self.getCollisionProcessesFrom(sigmaVfile)
 
+    def __str__(self) -> str:
+
+        dmLabel = self.componentsDict[self.dmPDG].label
+        smLabel = self.componentsDict[0].label
+        mStr = f'Model : {smLabel} + {dmLabel}(DM) + '
+        mStr += ' + '.join([comp.label for comp in self.componentsDict.values() 
+                            if comp.label not in [dmLabel,smLabel]])
+
+        return mStr
+    
+    def __repr__(self) -> str:
+        return str(self)
+
     def getParticleDataFrom(self, paramCard : str):
 
         # Get information from the param_card
         particle_data = pyslha.read(paramCard)
-        massDict = particle_data['MASS']
+        massDict = particle_data.blocks['MASS']
         decaysDict = particle_data.decays
         # We need a separate method to get the quantum numbers and particle labels
         qnumbers = self.getQnumbersFrom(paramCard)
 
         # Now restrict to the pdgs in bsmPDGList
-        for pdg in self.bsmPDGList:
+        for pdg in self.pdgList:
             if pdg not in qnumbers:
                 logger.info(f'Particle with {pdg} not found in {paramCard}')
                 continue
@@ -161,11 +173,12 @@ class ModelData(object):
                 mass = 0.0
                 logger.info(f'Mas for particle {pdg} not found in {paramCard}. Setting the mass to zero')
             comp = Component(label=particleInfo['label'],PDG = pdg, 
-                            mass = mass, g = particleInfo['dof'])
+                            mass = mass, g = particleInfo['dof'],
+                            ID = len(self.componentsDict))
             
             if pdg in decaysDict:
                 decays = decaysDict[pdg]
-                comp.setDecays(totalwidth=decays['totalwidth'], brs = decays.decays)
+                comp.setDecays(totalwidth=decays.totalwidth, brs = decays.decays)
             
             self.componentsDict[pdg] = comp
         

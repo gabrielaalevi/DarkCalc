@@ -29,4 +29,4 @@ we have:
 $$\frac{d Y_i}{dx} = \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[-C_{ii,XX} \frac{1}{\bar{Y}_i \bar{Y}_i} - C_{ij,XX} \frac{1}{\bar{Y}_i \bar{Y}_j}   - C_{ii,jj} 
  - C_{iX,jX} + \sum_j D_{ji} - \sum_j D_{ij} \right]$$
 
-and for convenience we define $Y_0 = Y_{\rm SM} = Y_{eq} \propto 1/g_{*}(T)$ with $\frac{d Y_0}{dx} = 0$.
+and for convenience we define $Y_0 = Y_{\rm SM} = Y_{eq} = \frac{\zeta(3)}{\pi^2}g^{*}_{S}(T) T^3/s = \frac{45}{2 \pi^4} \zeta(3) $ with $\frac{d Y_0}{dx} = 0$.
