@@ -13,9 +13,9 @@ import tempfile
 import time,datetime
 
 
-def computeDecays(parser):
+def runMadDM(parser):
     """
-    Run Madgraph to compute widths for the listed particles.
+    Run MadDM to compute widths and relevant collision cross-sections.
     
     :param parser: Dictionary with parser sections.
     
@@ -28,39 +28,50 @@ def computeDecays(parser):
         logger.warning(f"Output folder {outputFolder} found. Skipping decay calculation.")
         return False
     
-    #Generate commands file:       
-    commandsFile,cFilePath = tempfile.mkstemp(suffix='.txt', prefix='MG5_commands_', dir=outputFolder)    
-    os.close(commandsFile)
+    
+    modelDir = os.path.abspath(parser.get('Model','modelDir'))
+    dmPDG = parser.get('Model','dmPDG')
+    pdgsList = parser.get('Model','pdgs').split(',')
+    # Make sure the dmPDG does not appear twice
+    pdgsList = [pdg for pdg in pdgsList[:] if pdg != dmPDG]
 
+    #Generate commands file:       
+    commandsFile,cFilePath = tempfile.mkstemp(suffix='.txt', prefix='maddm_commands_', dir=outputFolder)    
+    os.close(commandsFile)
     commandsFileF = open(cFilePath,'w')
-    commandsFileF.write('done\n')
+    commandsFileF.write(f'import model {modelDir}\n')
+    commandsFileF.write(f'define darkmatter {dmPDG}\n')
+    for pdg in pdgsList:
+        commandsFileF.write(f'define coannihilator {pdg}\n')
+    commandsFileF.write('generate relic_density\n')
+    commandsFileF.write(f'output {outputFolder}')
+    commandsFileF.write('launch')
     comms = parser.toDict(raw=False)["SetParameters"]
-    #Set a low number of events, since it does not affect the total cross-section value
-    #(can be overridden by the user, if the user defines a different number in the input card)
+    #Set model parameters
     for key,val in comms.items():
         commandsFileF.write(f'set {key} {val}\n')
     
-
-    pdgsList = parser.get('Model','pdgs')
+    
     if bool(parser.get('Options','computeWidths')):
-        commandsFileF.write(f'compute_widths {pdgsList}\n')
+        for pdg in pdgsList:
+            commandsFileF.write(f'compute_widths {pdg}\n')
         commandsFileF.write('done\n')
         commandsFileF.close()
-        mg5path = parser.get('Options','MadGraphPath')
-        mg5Folder = os.path.abspath(mg5path)        
+        mg5Folder = parser.get('Options','MadGraphPath')
+        mg5Folder = os.path.abspath(mg5Folder)        
         # Comput widths
-        run = subprocess.Popen(f'./bin/mg5_aMC -f {cFilePath}',shell=True,
+        run = subprocess.Popen(f'./bin/maddm.py -f {cFilePath}',shell=True,
                                     stdout=subprocess.PIPE,stderr=subprocess.PIPE,
                                     cwd=mg5Folder)
         
         
          
     output,errorMsg = run.communicate()
-    logger.debug('MG5 process error:\n %s \n' %errorMsg)
-    logger.debug('MG5 process output:\n %s \n' %output)
-    logger.info("Finished process generation")
+    logger.debug('MadDM process error:\n %s \n' %errorMsg)
+    logger.debug('MadDM process output:\n %s \n' %output)
+    logger.info("Finished MadDM run")
 
-    os.remove(procCard)
+    os.remove(cFilePath)
         
     return True
 

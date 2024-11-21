@@ -20,6 +20,8 @@ if echo "$answer" | grep -iq "^y" ;then
 	cp MadDM/get_taacs.f MadDM/maddm.f MadDM/makefile MG5/PLUGIN/maddm/Templates/src/;
 	cp MadDM/MGoutput.py MG5/PLUGIN/maddm/;
 	cp MadDM/maddm.inc MG5/PLUGIN/maddm/python_templates/;
+	cp MadDM/madgraph_interface.py MG5/madgraph/interface/;
+	cp MadDM/common_run_interface.py MG5/madgraph/interface/;
 fi
 
 cd $currentDIR
