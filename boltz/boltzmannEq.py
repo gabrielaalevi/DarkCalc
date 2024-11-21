@@ -3,11 +3,10 @@
 import numpy as np
 from scipy.special import kn
 import thermal.equilibriumDensities as eqDensitities
-from components import Component, CollisionProcess
+from modelData import ModelData
 from typing import List,Dict
 
-def boltz(x: float, Y : List[float], compDict : Dict[int,Component], 
-          mDM : float, collisions : List[CollisionProcess]):
+def boltz(x: float, Y : List[float], model : ModelData):
     """
     Boltzmann equations for the BSM components. Assumes the energy density is dominated by radiation
     and the SM degrees of freedom.
@@ -19,6 +18,8 @@ def boltz(x: float, Y : List[float], compDict : Dict[int,Component],
     :param collisions: CollisionProcesses object holding all the relevant thermally averaged collision cross-sections
     """
 
+    mDM = model.mDM
+    compDict = model.componentsDict
     T = mDM/x
     # The zero component is the SM, so we set dY = 0 and Y = Yeq always
     Y[0] = compDict[0].Yeq(T)
@@ -67,18 +68,22 @@ def boltz(x: float, Y : List[float], compDict : Dict[int,Component],
         inj_term = np.sum(Dij[:,i])
         ### Collision term (i + a -> b + c)
         coll_term = 0.0
-        for process in collisions:
-            i_pdg,j_pdg = process.initialPDGs
-            l_pdg, m_pdg = process.finalPDGs            
-            if comp_i.PDG not in process.initialPDGs:
+        for process in model.collisionProcesses:
+            if not process.hasPDG(comp_i.PDG):
                 continue
-            if j_pdg == comp_i.PDG: # switch order
-                j_pdg, i_pdg = i_pdg, j_pdg
-            j = compDict[j_pdg].ID
-            l = compDict[l_pdg].ID
-            m = compDict[m_pdg].ID
+            if comp_i.PDG in process.initialPDGs:
+                a_pdg,b_pdg = process.initialPDGs
+                c_pdg, d_pdg = process.finalPDGs                
+            else: # If the particle appears only as a final state reverse the initial and final states
+                a_pdg,b_pdg = process.finalPDGs
+                c_pdg, d_pdg = process.initialPDGs
+            sigma = process.sigmaV(x)
+            a = compDict[a_pdg].ID
+            b = compDict[b_pdg].ID
+            c = compDict[c_pdg].ID
+            d = compDict[d_pdg].ID
             # Set the indices
-            coll_term -= process.sigmaV(T)*(Yratio[i]*Yratio[j]-Yratio[l]*Yratio[m])
+            coll_term -= sigma*(Yratio[a]*Yratio[b]-Yratio[c]*Yratio[d])
 
         dY[i] += (1/(3*H))*dsdx*(dec_term + inj_term + coll_term)
 

@@ -3,7 +3,7 @@ from scipy.special import kn, zeta
 from numpy import pi,sqrt,exp
 m_planck = 2.4*10**(18) #reduced planck mass, in GeV
 
-def dof(T: float) -> float:
+def gstar(T: float) -> float:
     """
     Calculates the number of relativistic degrees of freedom for a given temperature T (in GeV)
     assuming only the SM degrees of freedom.
@@ -32,7 +32,7 @@ def H(T: float) -> float:
     :param T: thermal bath temperature (in GeV)
     """
     
-    g_star = dof(T)
+    g_star = gstar(T)
     h = 2*sqrt(g_star*pi**3/45)*T**2/m_planck
     return h
 
@@ -44,7 +44,7 @@ def S(T: float) -> float:
     :param T: thermal bath temperature (in GeV)
     """
     
-    g_star = dof(T) #g_star is the number of relativistic degrees of freedom
+    g_star = gstar(T) #g_star is the number of relativistic degrees of freedom
     s = (2*pi**2/45)*g_star*T**3
 
     return s
@@ -105,7 +105,7 @@ def dSdT(T: float) -> float:
     :param T: thermal bath temperature (in GeV)
     """
     
-    g_star = dof(T) #g_* is the number of relativistic degrees of freedom    
+    g_star = gstar(T) #g_* is the number of relativistic degrees of freedom    
     dsdT = (6*pi**2/45)*g_star*T**2
     
     return dsdT
@@ -118,7 +118,7 @@ def dSdx(x: float, mDM: float) -> float:
     """
     
     T = mDM/x    
-    g_star = dof(T) #g_* is the number of relativistic degrees of freedom    
+    g_star = gstar(T) #g_* is the number of relativistic degrees of freedom    
     dsdT = (6*pi**2/45)*g_star*T**2
     dsdx = (-mDM/x**2)*dsdT
     
