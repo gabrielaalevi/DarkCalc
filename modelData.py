@@ -140,7 +140,7 @@ class ModelData(object):
         smComponent.g = gstar
         self.componentsDict : Dict[int,Component] = {0 : smComponent}
         self.collisionProcesses : List[CollisionProcess] = []
-        self.dm = dmPDG # Dark Matter PDG code
+        self.dmPDG = dmPDG # Dark Matter PDG code
         self.pdgList = bsmPDGList[:]
 
         if paramCard is not None:

@@ -7,11 +7,13 @@ from __future__ import print_function
 import sys,os
 from tools.configParserWrapper import ConfigParserExt
 from tools.logger import logger,setLogLevel
+from boltz.boltzSolver import solveBoltzEqs
 import subprocess
 import multiprocessing
 import tempfile
 import time,datetime
 from modelData import ModelData
+import numpy as np
 
 def runMadDM(parser : dict) -> str:
     """
@@ -105,16 +107,70 @@ def loadModel(parser : dict, outputFolder: str) -> ModelData:
     dm = parser['Model']['darkmatter']
     bsmList = parser['Model']['bsmParticles'].split(',')
     model = ModelData(dmPDG=dm, bsmPDGList=bsmList, paramCard=paramCard, sigmaVfile=sigmaVFile)
-    logger.info(f'Successfully loaded model {model}')
+    logger.info(f'Successfully loaded {model}')
 
     return model
 
 def runSolver(parser : dict, model : ModelData) -> bool:
     
-    logger.debug(f'Solving Boltzmann equations for model {model}')
+    logger.debug(f'Solving Boltzmann equations for {model}')
+
+    pars = parser['SolverParameters']
+    atol = pars['atol']
+    rtol = pars['rtol']
+    T0 = pars['T0']
+    Tf = pars['Tf']
+    method = pars['method']
+    nsteps = pars['nsteps']
+    compDict = model.componentsDict
+    mDM = compDict[model.dmPDG].mass
+    x0 = mDM/T0
+    xf = mDM/Tf    
+
+    # Set initila conditions
+    initialCond = pars['initialConditions']
+    label2pdg = {comp.label : comp.PDG for comp in compDict.values()}    
+    y0 = np.zeros(len(model.componentsDict))
+    for label,comp_y0 in initialCond.items():
+        if label in label2pdg:
+            pdg = label2pdg[label]
+            comp = compDict[pdg]
+        elif label in compDict:
+            comp = compDict[label]
+        else:
+            logger.error(f"Could not find component {label} in {model}")
+            return False
+        
+        if isinstance(comp_y0,float):
+            y0[comp.ID] = y0
+        elif comp_y0.lower() in ['eq', 'equilibrium']:
+            y0[comp.ID] = comp.Yeq(x0)
+        else:
+            logger.error(f"Could not set initial condition to {comp_y0}")
+            return False
+        
+    xvals = np.linspace(x0,xf,nsteps)
+    solution = solveBoltzEqs(xvals,Y0=y0,model=model,
+                             method=method,atol=atol,rtol=rtol)
+    
+    print(type(solution))
+    
+    return solution
+
+def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
+
+    pars = parser['SolverParameters']
+    compDict = model.componentsDict
+    x_sol = solution.t
+    y_sol = solution.y
+    data = np.array(list(zip(x_sol,*y_sol)))
+    labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID)]
+    header = ','.join(['x'] + labels)
+    outFile = os.path.abspath(pars['outputFile'])
+    np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')
 
     return True
-
+    
 
 def runAll(parser : dict) -> bool:
     """
@@ -126,15 +182,24 @@ def runAll(parser : dict) -> bool:
     """
 
     t0 = time.time()
-    logger.info("Running MadDM")
-    outputFolder = runMadDM(parser)
-    logger.info("Finished MadDM run")
+    if 'skipMadDM' in parser['Options']:
+        skipMadDM = bool(parser['Options']['skipMadDM'])
+    else:
+        skipMadDM = False
+    if not skipMadDM:
+        logger.info("Running MadDM")
+        outputFolder = runMadDM(parser)
+        logger.info("Finished MadDM run")
+    else:
+        outputFolder = os.path.abspath(parser['Options']['outputFolder'])
     logger.info("Loading model")
     model = loadModel(parser, outputFolder)
     logger.info("Model loaded")
     logger.info("Solving Boltzmann equations")
     sol = runSolver(parser,model)
     logger.info("Solved Boltzmann equations")
+    logger.info("Saving solutions")
+    saveSolutions(parser,sol,model)
 
     return sol
 

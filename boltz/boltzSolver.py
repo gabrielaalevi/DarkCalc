@@ -1,87 +1,20 @@
-#solving the ODE
 
-from scipy.integrate import solve_ivp
-import numpy as np
-from boltzmannEq import boltz, debug_func
-from modelParameters import comp_names, x, mDM, SM, debug_version, name_file
-import numpy as np
+from scipy.integrate import solve_ivp, odeint
+from boltz.boltzmannEq import boltz
+from typing import List
+from modelData import ModelData
 
-#creating the y0 array, that holds the initial value of yield for each particle, and loop to fill it
-y0 = np.zeros(len(comp_names))
-for i in range(0, len(comp_names)):
-    comp = comp_names[i]
-    if comp.in_equilibrium == 1:
-        y0[i] = comp.equilibriumyield(x[0], mDM)
-    if comp.in_equilibrium == 0:
-        y0[i] = 0.0001
-#solving the Boltzmann equation
-sol1= solve_ivp(boltz, [x[0], 9], y0, args=(comp_names, SM, mDM, x), atol = 10**(-12), rtol = 10**(-12), method='BDF')
-y02 = np.zeros(len(comp_names))
-for i in range(0, len(comp_names)):
-    y02[i] = sol1.y[i][-1]
-sol2= solve_ivp(boltz, [9, 11],y02, args=(comp_names, SM, mDM, x), atol = 10**(-12), rtol = 10**(-12), method='LSODA', max_step = 0.08)
-y03 = np.zeros(len(comp_names))
-for i in range(0, len(comp_names)):
-    y03[i] = sol2.y[i][-1]
-sol3 = solve_ivp(boltz, [11, 28], y03, args=(comp_names, SM, mDM, x), atol = 10**(-13), rtol = 10**(-13), method='LSODA', max_step = 0.04)
-y04 = np.zeros(len(comp_names))
-for i in range(0, len(comp_names)):
-    y04[i] = sol3.y[i][-1]
-sol4 = solve_ivp(boltz, [28, x[-1]],y04, args=(comp_names, SM, mDM, x), atol = 10**(-12), rtol = 10**(-12), method='LSODA', max_step = 0.08)
-solt = [*sol1.t, *sol2.t, *sol3.t, *sol4.t]
-Y = np.zeros(((2*len(comp_names))+1, len(solt))) #saving the output in one matrix
-for i in range(0, len(comp_names)):
-    comp = comp_names[i]
-    Y[0][:] = solt
-    Y[2*i+1][:] = [*sol1.y[i], *sol2.y[i], *sol3.y[i], *sol4.y[i]]
-    for j in range(0, len(solt)):
-        Y[(2*i) + 2][j] = comp.equilibriumyield(solt[j], mDM)
-#in here, we create the header for the final txt file
-header = '          x'
-for i in range(0, len(comp_names)):
-    comp = comp_names[i]
-    header = header + '                  Y_' + comp.label + '                       Y_eq_' + comp.label
-name = name_file + ' data.csv'
-Y_trans = np.transpose(Y)
-np.savetxt(name, Y_trans, header=header, delimiter='   ')
-print(Y_trans)
 
-if debug_version == True:
-    name = name_file + ' debug.csv'
-    reactions_values = list()
-    header = '         x                  '
-    for i in range(0, len(solt)):
-        reac = debug_func(solt[i], Y_trans[i][1:], comp_names, SM, mDM, x)
-        print('1', Y_trans[i][1], '2', Y_trans[i][2], '3', Y_trans[i][3], '4', Y_trans[i][4])
-        reactions_values.append(reac)
-    for i in range(0, len(comp_names)):
-        comp = comp_names[i]
-        if comp.decayreactions == 0:
-            for m in range(0, len(comp.collisions)):
-                header = header + ' ' + comp.type + ' ' + str(comp.collisions[m][0]) + ' -> ' 
-                if not comp.collisions[m][1] or len(comp.collisions[m][1]) == 1:
-                    header = header + ' SM '
-                else:
-                    for p in range(0, len(comp.collisions[m][1])):
-                        prod = comp.collisions[m][1][p]
-                        for l in range (0, len(comp_names)):
-                            comp_prod = comp_names[l]
-                            if comp_prod.PDG == prod:
-                                header = header + comp_prod.type
-                    header = header + '     '
-        else:
-            for j in range(0, len(comp.decayreactions)):
-                header = header + ' ' + comp.type + ' -> '
-                for p in range(0, len(comp.decayreactions[j][0])):
-                    prod = comp.decayreactions[j][0][p]
-                    header = header + str(prod)
-            for m in range(0, len(comp.collisions)):
-                header = header + ' ' + comp.type + comp.collisions[m][0] + ' -> '
-                if not comp.collisions[m][1] or len(comp.collisions[m][1]) == 1:
-                    header = header + ' SM                       '
-                else:
-                    for p in range(0, len(comp.collisions[m][1])):
-                        prod = comp.collisions[m][1][p]
-                        header = header + str(prod)
-                    header = header + '     '
-    np.savetxt(name, np.column_stack([reactions_values]), header = header, delimiter='   ')
+def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
+                  method : str = 'BDF', 
+                  atol : float = 1e-12,
+                  rtol : float = 1e-12,):
+
+
+    # Initial conditions
+    x0, xf = xvals[0],xvals[-1]
+    #solving the Boltzmann equation
+    sol = solve_ivp(boltz, [x0,xf], Y0, args=(model,), atol = atol, rtol = rtol, method=method)
+    # sol1= odeint(boltz, y0, xvals, args=(model,), tfirst=True)
+
+    return sol
