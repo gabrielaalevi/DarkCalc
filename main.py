@@ -8,6 +8,8 @@ import sys,os
 from tools.configParserWrapper import ConfigParserExt
 from tools.logger import logger,setLogLevel
 from boltz.boltzSolver import solveBoltzEqs
+from boltz.boltzmannEq import computeCollisionTerms,computeDecayTerms
+from scipy.integrate import OdeSolution
 import subprocess
 import multiprocessing
 import tempfile
@@ -38,7 +40,7 @@ def runMadDM(parser : dict) -> str:
             return False
 
     dm = parser['Model']['darkmatter']
-    bsmList = parser['Model']['bsmParticles'].split(',')
+    bsmList = str(parser['Model']['bsmParticles']).split(',')
     # Make sure the dmPDG does not appear twice
     bsmList = [p for p in bsmList[:] if p != dm]
 
@@ -60,7 +62,7 @@ def runMadDM(parser : dict) -> str:
     
     
     if 'computeWidths' in parser['Model']:
-        pList = parser['Model']['computeWidths'].split(',')
+        pList = str(parser['Model']['computeWidths']).split(',')
         pStr = ' '.join(pList)
         commandsFileF.write(f'compute_widths {pStr}\n')
         commandsFileF.write('done\n')
@@ -105,13 +107,13 @@ def loadModel(parser : dict, outputFolder: str) -> ModelData:
     
 
     dm = parser['Model']['darkmatter']
-    bsmList = parser['Model']['bsmParticles'].split(',')
+    bsmList = str(parser['Model']['bsmParticles']).split(',')
     model = ModelData(dmPDG=dm, bsmPDGList=bsmList, paramCard=paramCard, sigmaVfile=sigmaVFile)
     logger.info(f'Successfully loaded {model}')
 
     return model
 
-def runSolver(parser : dict, model : ModelData) -> bool:
+def runSolver(parser : dict, model : ModelData) -> OdeSolution:
     
     logger.debug(f'Solving Boltzmann equations for {model}')
 
@@ -128,18 +130,11 @@ def runSolver(parser : dict, model : ModelData) -> bool:
     xf = mDM/Tf    
 
     # Set initila conditions
-    initialCond = pars['initialConditions']
-    label2pdg = {comp.label : comp.PDG for comp in compDict.values()}    
+    initialCond = pars['initialConditions']    
     y0 = np.zeros(len(model.componentsDict))
     for label,comp_y0 in initialCond.items():
-        if label in label2pdg:
-            pdg = label2pdg[label]
-            comp = compDict[pdg]
-        elif label in compDict:
-            comp = compDict[label]
-        else:
-            logger.error(f"Could not find component {label} in {model}")
-            return False
+        pdg = model.convert2PDG(label)
+        comp = compDict[pdg]
         
         if isinstance(comp_y0,float):
             y0[comp.ID] = y0
@@ -153,24 +148,43 @@ def runSolver(parser : dict, model : ModelData) -> bool:
     solution = solveBoltzEqs(xvals,Y0=y0,model=model,
                              method=method,atol=atol,rtol=rtol)
     
-    print(type(solution))
-    
     return solution
 
 def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
 
     pars = parser['SolverParameters']
+    extended = bool(pars['extendedOutput'])
     compDict = model.componentsDict
+    labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID) if comp.ID != 0]
     x_sol = solution.t
     y_sol = solution.y
-    data = np.array(list(zip(x_sol,*y_sol)))
-    labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID)]
-    header = ','.join(['x'] + labels)
+    headerList = ['x'] + [f'Y({label})' for label in labels] 
+    data = np.array(list(zip(x_sol,*y_sol[1:])))
+
+    if extended:
+        Dij_vec = []
+        Cij_vec = []
+        proc_names = None
+        for i,x in enumerate(x_sol):
+            Y = y_sol[:,i]
+            Dij_vec.append(computeDecayTerms(x,Y,model)[1:,1:].flatten())
+            c = computeCollisionTerms(x,Y,model)
+            if proc_names is None:                
+                proc_names = [name for cc in c for name in cc.keys()]
+            proc_values = [sigma for cc in c for sigma in cc.values()]
+            Cij_vec.append(proc_values)
+        
+        headerList += [f'D({labelA} -> {labelB})' for labelA in labels for labelB in labels]
+        headerList += [f'C({proc_name})' for proc_name in proc_names]
+        data = np.hstack((data,Dij_vec))
+        data = np.hstack((data,Cij_vec))
+
+        
+    header = ','.join(headerList)
     outFile = os.path.abspath(pars['outputFile'])
     np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')
 
     return True
-    
 
 def runAll(parser : dict) -> bool:
     """
@@ -245,7 +259,6 @@ def main(parfile,verbose):
     logger.info("Finished all runs (%i) at %s" %(len(parserList),now.strftime("%Y-%m-%d %H:%M")))
 
     return output
-    
 
 
 if __name__ == "__main__":

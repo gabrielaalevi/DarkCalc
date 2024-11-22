@@ -24,9 +24,16 @@ class Component(object):
         self.decays = None
 
     
-    def setDecays(self, totalwidth : float, brs : Dict[List[int],float]) -> None:
+    def setDecays(self, totalwidth : float, decays : list, pdgList : List[int]) -> None:
 
-        self.decays = {daughter_pids : br for daughter_pids,br in brs}
+        
+        self.decays = {}
+        for decay in decays:
+            finalIDs = decay.ids
+            finalIDs = np.abs(finalIDs).tolist()
+            finalIDs = [fid if fid in pdgList else 0 for fid in finalIDs]
+            finalIDs = sorted(finalIDs)
+            self.decays[tuple(finalIDs)] = decay.br
         self.totalwidth = totalwidth
 
 
@@ -97,12 +104,12 @@ class CollisionProcess(object):
         :param pdg: Particle's pdg code.
         """
 
-        if pdg not in self.initialPDGs+self.finalPDGs:
+        if pdg not in (self.initialPDGs+self.finalPDGs):
             return False
         elif self.initialPDGs.count(pdg) == self.finalPDGs.count(pdg):
             return False
         else:
-            return False
+            return True
 
     def setSigmaV(self, xlist : List[float], sigmavList : List[float]):
 
@@ -126,7 +133,7 @@ class ModelData(object):
                             Currently only a Dark Matter and a Mediator are allowed.
         :param dmPDG: Used to define the PDG particle
         """
-
+        
         if dmPDG not in bsmPDGList:
             bsmPDGList.append(dmPDG)
 
@@ -149,7 +156,7 @@ class ModelData(object):
         self.pdgList = bsmPDGList[:]
 
         if paramCard is not None:
-            self.getParticleDataFrom(paramCard)
+            self.getParticleDataFrom(paramCard)            
         if sigmaVfile is not None:
             self.getCollisionProcessesFrom(sigmaVfile)
 
@@ -177,10 +184,12 @@ class ModelData(object):
         labels2pdgs = {qnumbers[pdg]['label'] : pdg for pdg in qnumbers}
 
         # Convert labels to PDGs if labels were given as input
-        self.pdgList = [labels2pdgs[pdg] if pdg in labels2pdgs else pdg 
+        self.pdgList = [labels2pdgs[pdg] if pdg in labels2pdgs else int(pdg)
                         for pdg in self.pdgList[:]]
         if self.dmPDG in labels2pdgs:
             self.dmPDG = labels2pdgs[self.dmPDG]
+        else:
+            self.dmPDG = int(self.dmPDG)
 
         # Now restrict to the pdgs in bsmPDGList
         for pdg in self.pdgList:
@@ -196,10 +205,10 @@ class ModelData(object):
             comp = Component(label=particleInfo['label'],PDG = pdg, 
                             mass = mass, g = particleInfo['dof'],
                             ID = len(self.componentsDict))
-            
             if pdg in decaysDict:
                 decays = decaysDict[pdg]
-                comp.setDecays(totalwidth=decays.totalwidth, brs = decays.decays)
+                comp.setDecays(totalwidth=decays.totalwidth, decays = decays.decays, 
+                               pdgList = self.pdgList)
             
             self.componentsDict[pdg] = comp
         
@@ -209,6 +218,8 @@ class ModelData(object):
         
         # Set Dark Matter mass to use for scaling the temperature
         self.mDM = self.componentsDict[self.dmPDG].mass
+
+        self.createLabel2PDGDict()
 
         # If collisions have been already loaded, make sure
         # that all the PDGs not appearing in self.pdgList are in thermal equilibrium (SM)
@@ -230,6 +241,7 @@ class ModelData(object):
         qnumberBlocks = data.split('block qnumbers ')[1:]
         pdgDict = {}
         for b in qnumberBlocks:
+            b = b[:b.find('\ndecay')]
             lines = b.split('\n')
             lines = [l.strip() for l in lines[:] if l.strip()]
             lines = [l for l in lines[:] if l[0] != '#']
@@ -293,3 +305,17 @@ class ModelData(object):
                proc.initialPDGs = [x if x in self.pdgList else 0 for x in initPDGs ]
                finalPDGs = proc.finalPDGs[:]
                proc.finalPDGs = [x if x in self.pdgList else 0 for x in finalPDGs ]
+
+
+    def createLabel2PDGDict(self) -> None:
+        if not hasattr(self,'_label2pdgDict'):
+            self._label2pdgDict = {comp.label : comp.PDG 
+                         for comp in self.componentsDict.values()}
+            self._label2pdgDict.update({comp.PDG : comp.PDG 
+                         for comp in self.componentsDict.values()})
+        
+        
+    def convert2PDG(self,label : str) -> int:
+       
+        return self._label2pdgDict[label]
+    

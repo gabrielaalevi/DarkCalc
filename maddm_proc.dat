@@ -7,3 +7,4 @@ launch ../../modelxdb1_3rd
 set mxd 500
 set mys3qu3 520
 set lams3d3x3 1e-3
+compute_widths 1000005

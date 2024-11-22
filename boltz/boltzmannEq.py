@@ -4,28 +4,19 @@ import numpy as np
 from scipy.special import kn
 import thermal.equilibriumDensities as eqDensitities
 from modelData import ModelData
-from typing import List
+from typing import List, Dict
+from numpy.typing import ArrayLike
 
-def boltz(x: float, Y : List[float], model : ModelData):
-    """
-    Boltzmann equations for the BSM components. Assumes the energy density is dominated by radiation
-    and the SM degrees of freedom.
-
-    :param x: Evolution variable, x = mDM/T
-    :param Y: List of yields for each BSM componnent (zero component is the SM)
-    :param model: Model data object holding information about the particles and collision processes.
-    """
+def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike:
 
     mDM = model.mDM
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     T = mDM/x
-    # The zero component is the SM, so we set dY = 0 and Y = Yeq always
-    Y[0] = compDict[0].Yeq(T)
-    H = eqDensitities.H(T) #hubble rate at temperature T
-    s = eqDensitities.S(T) #entropy density at temperature T
-    dsdx = eqDensitities.dSdx(x, mDM) #variation of entropy with x
 
+    compDict = model.componentsDict
+    # The zero component is the SM, so we set dY = 0 and Y = Yeq always    
+    s = eqDensitities.S(T) #entropy density at temperature T
 
     # Pre-compute relevant decay terms:
     Dij = np.zeros((len(Y),len(Y)))
@@ -47,26 +38,27 @@ def boltz(x: float, Y : List[float], model : ModelData):
             for j in sorted(np.unique(daughter_ids)):
                 Yprod = np.prod([Y[daughter.ID]/daughter.Yeq(T) for daughter in daughters])  
                 Dij[i,j] += gamma_i*comp_i.totalwidth*br*(Y_i - Yeq_i*Yprod)/s
+
+    return Dij
+
+def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[Dict[str,float]]:
+
+    mDM = model.mDM
+    compDict = model.componentsDict
+    mDM = compDict[model.dmPDG].mass
+    T = mDM/x
             
     # Pre-compute collision factors:
     Yratio = np.ones(len(Y))
     for comp in compDict.values():
         Yratio[comp.ID] = Y[comp.ID]/comp.Yeq(T)
-        
-    #loop over all components
-    dY = np.zeros(len(Y)) #list with all the rhs for all the components, ordered as in the comp_list
+
+    coll_terms = [{} for comp in compDict.values()]
     for comp_i in compDict.values():        
         i = comp_i.ID
         if i == 0:
             continue # Skip SM
-        Y_i = Y[i]
-        Yeq_i = comp_i.Yeq(T)
-        ## Decay and inverse decay terms ( i -> j + ...)
-        dec_term = -np.sum(Dij[i,:])
-        ## Injection and inverse injection terms ( j -> i + ...)
-        inj_term = np.sum(Dij[:,i])
         ### Collision term (i + a -> b + c)
-        coll_term = 0.0
         for process in model.collisionProcesses:
             if not process.changesPDG(comp_i.PDG):
                 continue
@@ -81,9 +73,46 @@ def boltz(x: float, Y : List[float], model : ModelData):
             b = compDict[b_pdg].ID
             c = compDict[c_pdg].ID
             d = compDict[d_pdg].ID
-            # Set the indices
-            coll_term -= sigma*(Yratio[a]*Yratio[b]-Yratio[c]*Yratio[d])
+            coll_terms[i].setdefault(process.name,0.0)
+            coll_terms[i][process.name] -= sigma*(Yratio[a]*Yratio[b]-Yratio[c]*Yratio[d])
 
-        dY[i] += (1/(3*H))*dsdx*(dec_term + inj_term + coll_term)
+    return coll_terms
+
+def boltz(x: float, Y : List[float], model : ModelData):
+    """
+    Boltzmann equations for the BSM components. Assumes the energy density is dominated by radiation
+    and the SM degrees of freedom.
+
+    :param x: Evolution variable, x = mDM/T
+    :param Y: List of yields for each BSM componnent (zero component is the SM)
+    :param model: Model data object holding information about the particles and collision processes.
+    """
+
+    mDM = model.mDM
+    compDict = model.componentsDict
+    mDM = compDict[model.dmPDG].mass
+    T = mDM/x
+    # The zero component is the SM, so we set dY = 0 and Y = Yeq always
+    Y[0] = compDict[0].Yeq(T)
+    H = eqDensitities.H(T) #hubble rate at temperature T
+    dsdx = eqDensitities.dSdx(x, mDM) #variation of entropy with x
+
+    Dij = computeDecayTerms(x,Y,model)
+    coll_i = computeCollisionTerms(x,Y,model)
+
+    #Compute derivative 
+    dY = np.zeros(len(Y)) #list with all the rhs for all the components, ordered as in the comp_list
+    for comp_i in compDict.values():        
+        i = comp_i.ID
+        if i == 0:
+            continue # Skip SM
+        ## Decay and inverse decay terms ( i <-> j + ...)
+        dec_term = -np.sum(Dij[i,:])
+        ## Injection and inverse injection terms ( j <-> i + ...)
+        inj_term = np.sum(Dij[:,i])
+        ### Collision term (i + a <-> b + c)
+        coll_term = np.sum(list(coll_i[i].values()))
+
+        dY[i] = (1/(3*H))*dsdx*(dec_term + inj_term + coll_term)
 
     return dY
