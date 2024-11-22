@@ -68,7 +68,7 @@ def boltz(x: float, Y : List[float], model : ModelData):
         ### Collision term (i + a -> b + c)
         coll_term = 0.0
         for process in model.collisionProcesses:
-            if not process.hasPDG(comp_i.PDG):
+            if not process.changes(comp_i.PDG):
                 continue
             if comp_i.PDG in process.initialPDGs:
                 a_pdg,b_pdg = process.initialPDGs

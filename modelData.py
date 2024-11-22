@@ -4,7 +4,7 @@
 from thermal.equilibriumDensities import Neq, Yeq, gstar
 from typing import List, Dict, Optional
 from scipy.interpolate import interp1d
-from boltz.boltzLogging import logger
+from tools.logger import logger
 import numpy as np
 import pyslha
 from typing import List, Dict
@@ -82,12 +82,20 @@ class CollisionProcess(object):
     def __repr__(self):
         return str(self)
 
-    def hasPDG(self,pdg : int) -> bool:
+    def changesPDG(self,pdg : int) -> bool:
+        """
+        Checks if the process changes the Yield for particle.
+        If the particle's pdg does not appear on the process or
+        if the number of particles in the initial state equals the number
+        in the final state, return False. Return True otherwise.
 
-        if abs(pdg) in self.initialPDGs:
-            return True
-        elif abs(pdg) in self.finalPDGs:
-            return True
+        :param pdg: Particle's pdg code.
+        """
+
+        if pdg not in self.initialPDGs+self.finalPDGs:
+            return False
+        elif self.initialPDGs.count(pdg) == self.finalPDGs.count(pdg):
+            return False
         else:
             return False
 

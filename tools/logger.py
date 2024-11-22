@@ -112,7 +112,7 @@ def getLogger ():
     formatter = logging.Formatter( FORMAT )
     ch = ColorizedStreamHandler()
     ch.setFormatter ( formatter )
-    logger = logging.getLogger("smodels")
+    logger = logging.getLogger("boltz")
     logger.addHandler(ch)
     logger.propagate = False
     return logger
