@@ -22,11 +22,12 @@ and the "collision terms":
 $$C_{ij,lm} \equiv \langle \sigma v \rangle_{ij\to lm} \left( \frac{Y_i}{\bar{Y}_i} \frac{Y_j}{\bar{Y}_j} - \frac{Y_l}{\bar{Y}_l} \frac{Y_m}{\bar{Y}_m}\right) = -C_{lm,ij}$$
 and
 $$
-\langle \sigma v \rangle_{iX\to jX} \equiv \bar{Y}_{i} \frac{\Gamma_{i\rightarrow j}}{s}
+\langle \sigma v \rangle_{iX\to jX} \equiv \frac{\Gamma_{i\rightarrow j}}{s}
 $$
 
 we have:
 $$\frac{d Y_i}{dx} = \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[-C_{ii,XX} \frac{1}{\bar{Y}_i \bar{Y}_i} - C_{ij,XX} \frac{1}{\bar{Y}_i \bar{Y}_j}   - C_{ii,jj} 
- - C_{iX,jX} + \sum_j D_{ji} - \sum_j D_{ij} \right]$$
+ - \frac{1}{\bar{Y}_i} C_{iX,jX} + \sum_j D_{ji} - \sum_j D_{ij} \right]$$
 
 and for convenience we define $Y_0 = Y_{\rm SM} = Y_{eq} = \frac{\zeta(3)}{\pi^2}g^{*}_{S}(T) T^3/s = \frac{45}{2 \pi^4} \zeta(3) $ with $\frac{d Y_0}{dx} = 0$.
+

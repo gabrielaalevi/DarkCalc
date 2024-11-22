@@ -67,6 +67,11 @@ class CollisionProcess(object):
 
     def __init__(self,initialPDGs : List[int] = [], finalPDGs : List[int] = [], 
                  name : Optional[str] = "") -> None:
+        """
+        Stores the thermally averaged cross-section for the process initialPDGs -> finalPDGs.
+        Only the absolute values of PDGs are used, so any charge-conjugated process will
+        result in the same CollisionProcess.
+        """
         
         self.initialPDGs = sorted(np.abs(initialPDGs).tolist())
         self.finalPDGs = sorted(np.abs(finalPDGs).tolist())
