@@ -4,16 +4,16 @@
 # (the proc_card.dat, parameter_card.dat and run_card.dat...).
 
 from __future__ import print_function
-import sys,os,glob
+import sys,os
 from tools.configParserWrapper import ConfigParserExt
 from tools.logger import logger,setLogLevel
 import subprocess
 import multiprocessing
 import tempfile
 import time,datetime
+from modelData import ModelData
 
-
-def runMadDM(parser):
+def runMadDM(parser : dict) -> str:
     """
     Run MadDM to compute widths and relevant collision cross-sections.
     
@@ -80,11 +80,63 @@ def runMadDM(parser):
     output,errorMsg = run.communicate()
     logger.debug(f'MadDM process error:\n {errorMsg.decode("utf-8")} \n')
     logger.debug(f'MadDM process output:\n {output.decode("utf-8")} \n')
-    logger.info("Finished MadDM run")
 
-    os.remove(cFilePath)
+    if os.path.isfile(cFilePath):
+        os.remove(cFilePath)
         
+    return outputFolder
+
+def loadModel(parser : dict, outputFolder: str) -> ModelData:
+
+    logger.debug(f'Loading model from {outputFolder}')
+    if not os.path.isdir(outputFolder):
+        logger.error(f'Output folder {outputFolder} not found')
+        return False
+    paramCard = os.path.join(outputFolder,'Cards','param_card.dat')
+    if not os.path.isfile(paramCard):
+        logger.error(f'Parameters card {paramCard} not found')
+        return False
+    sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
+    if not os.path.isfile(sigmaVFile):
+        logger.error(f'Sigmav file {sigmaVFile} not found')
+        return False
+    
+
+    dm = parser['Model']['darkmatter']
+    bsmList = parser['Model']['bsmParticles'].split(',')
+    model = ModelData(dmPDG=dm, bsmPDGList=bsmList, paramCard=paramCard, sigmaVfile=sigmaVFile)
+    logger.info(f'Successfully loaded model {model}')
+
+    return model
+
+def runSolver(parser : dict, model : ModelData) -> bool:
+    
+    logger.debug(f'Solving Boltzmann equations for model {model}')
+
     return True
+
+
+def runAll(parser : dict) -> bool:
+    """
+    Run MadDM, load the model and solve the Boltzmann equations
+
+    :param parser: Dictionary with parser sections.
+    
+    :return: Dictionary with run info. False if failed.
+    """
+
+    t0 = time.time()
+    logger.info("Running MadDM")
+    outputFolder = runMadDM(parser)
+    logger.info("Finished MadDM run")
+    logger.info("Loading model")
+    model = loadModel(parser, outputFolder)
+    logger.info("Model loaded")
+    logger.info("Solving Boltzmann equations")
+    sol = runSolver(parser,model)
+    logger.info("Solved Boltzmann equations")
+
+    return sol
 
 
 def main(parfile,verbose):
@@ -120,7 +172,7 @@ def main(parfile,verbose):
         # Create temporary folder names if running in parallel
         parserDict = newParser.toDict(raw=False)
         logger.debug('submitting with pars:\n %s \n' %parserDict)
-        p = pool.apply_async(runMadDM, args=(parserDict,),)
+        p = pool.apply_async(runAll, args=(parserDict,),)
         children.append(p)
 
 #     Wait for jobs to finish:

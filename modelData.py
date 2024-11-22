@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from tools.logger import logger
 import numpy as np
 import pyslha
-from typing import List, Dict
+from typing import List, Dict, Union
 
 
 
@@ -112,7 +112,8 @@ class ModelData(object):
     and collision processes
     """
 
-    def __init__(self, dmPDG : int,  bsmPDGList : List[int], 
+    def __init__(self, dmPDG : Union[int,str],  
+                 bsmPDGList : Union[List[int],List[str]], 
                  paramCard : Optional[str] = None,
                  sigmaVfile : Optional[str] = None):
         """
@@ -130,16 +131,16 @@ class ModelData(object):
         elif 0 in bsmPDGList:
             logger.error(f"The Model can not contain BSM Particles with PDG = 0!")
             raise ValueError()
-        elif any(pdg < 0 for pdg in bsmPDGList):
-            logger.error(f"The BSM particles should be defined with positive PDGs!")
-            raise ValueError()
+        # elif any(pdg < 0 for pdg in bsmPDGList):
+        #     logger.error(f"The BSM particles should be defined with positive PDGs!")
+        #     raise ValueError()
         
         smComponent = Component(label='SM',PDG=0, mass = 0.0, g = 1.0, ID = 0)
         # The a dynamical number of degrees of freedom for the SM
         smComponent.g = gstar
         self.componentsDict : Dict[int,Component] = {0 : smComponent}
         self.collisionProcesses : List[CollisionProcess] = []
-        self.dmPDG : int = dmPDG # Dark Matter PDG code
+        self.dm = dmPDG # Dark Matter PDG code
         self.pdgList = bsmPDGList[:]
 
         if paramCard is not None:
@@ -168,6 +169,13 @@ class ModelData(object):
         decaysDict = particle_data.decays
         # We need a separate method to get the quantum numbers and particle labels
         qnumbers = self.getQnumbersFrom(paramCard)
+        labels2pdgs = {qnumbers[pdg]['label'] : pdg for pdg in qnumbers}
+
+        # Convert labels to PDGs if labels were given as input
+        self.pdgList = [labels2pdgs[pdg] if pdg in labels2pdgs else pdg 
+                        for pdg in self.pdgList[:]]
+        if self.dmPDG in labels2pdgs:
+            self.dmPDG = labels2pdgs[self.dmPDG]
 
         # Now restrict to the pdgs in bsmPDGList
         for pdg in self.pdgList:
