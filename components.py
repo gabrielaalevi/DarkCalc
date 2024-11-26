@@ -1,7 +1,7 @@
 #module: Components
 #this module sets the main characteristics for all the involved particles
 
-from auxFunc import equilibrium_yield
+from auxFunc import equilibrium_yield, yeq_nonrelativ
 class Component(object):
     #class to hold the main characteristics of each component
 
@@ -20,4 +20,8 @@ class Component(object):
 
     def equilibriumyield(self, x, mDM):
         Y_eq = equilibrium_yield(self.mass, x, mDM, self.g)
+        return Y_eq
+    
+    def yeqnonrelativ(self, x, mDM):
+        Y_eq = yeq_nonrelativ(self.mass, x, mDM, self.g)
         return Y_eq

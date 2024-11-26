@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 import pyslha
 
-def find_processes_col(part, x, BSM, nsteps, SM):
+def find_processes_col(part, x, BSM, nsteps, taacs_path, processes_path):
 #opening the taacs files
-    processes_data = pd.read_csv("processes_taacs.csv", header=None)
-    taacs = pd.read_csv("taacs.csv")
+    processes_data = pd.read_csv(processes_path, header=None)
+    taacs = pd.read_csv(taacs_path)
     collisions = list() #list to hold all the arrays of collisions for an specific particle
     sigmav_selfann = np.zeros(nsteps) #array to hold the cross section for all the self-annihilation processes
     sigmav_coann = np.zeros(nsteps) #array to hold the cross section for all co-annihilation processes with the particle right before part in the BSM list
@@ -59,13 +59,13 @@ def find_processes_col(part, x, BSM, nsteps, SM):
                 elif col_partner == BSM[(index_part-1)]:
 #coannihilation with the particle of immediate smaller index
                     for k in range(0, nsteps):
-                        sigmav_coann[k] += sigma_v[k]
+                        sigmav_coann[k] +=  sigma_v[k]
                 else:
                     col = [col_partner, products, sigma_v]
                     collisions.append(col)
 #adding the conversion reaction
-                    #col = ['SM', [col_partner], sigma_v]
-                    #collisions.append(col)
+                    col = ['SM', [col_partner], sigma_v]
+                    collisions.append(col)
             else:
 #if we have one or two BSM particles as products in the process
                 col = [col_partner, products, sigma_v]
@@ -74,7 +74,7 @@ def find_processes_col(part, x, BSM, nsteps, SM):
     collisions.append(col_selfann)
     col_coann = [BSM[(index_part-1)], [], sigmav_coann]
     collisions.append(col_coann)
-    col_conversion = ['SM', [BSM[(index_part-1)]], sigmav_coann]
+    col_conversion = ['SM', [BSM[(index_part-1)], 'SM'], sigmav_coann]
     collisions.append(col_conversion)
     print(collisions)
     return collisions

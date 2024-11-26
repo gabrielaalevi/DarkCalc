@@ -54,3 +54,10 @@ def dsdx(x,mDM): #mDM is the mass of the DM particle
     g_star = degrees_of_freedom(x, mDM) #g_* is the number of relativistic degrees of freedom
     ds_dx = (-6 * math.pi**2 * g_star * mDM**3)/(45 * x**4)
     return ds_dx
+
+def yeq_nonrelativ(m, x, mDM, g):
+    T = mDM/x
+    g_star = degrees_of_freedom(x, mDM)#g_* is the number of relativistic degrees of freedom
+    s = entropydensity(x, mDM) #entropy density
+    Y_eq = ((abs(g)/(2 * np.pi**2)) * ( T * m**2)* kn(2, m/T)/s)
+    return Y_eq
