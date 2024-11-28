@@ -6,6 +6,7 @@ import thermal.equilibriumDensities as eqDensitities
 from modelData import ModelData
 from typing import List, Dict
 from numpy.typing import ArrayLike
+from tools.logger import logger
 
 def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike:
 
@@ -53,7 +54,11 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
     for comp in compDict.values():
         Yratio[comp.ID] = Y[comp.ID]/comp.Yeq(T)
 
-    coll_terms = [{} for comp in compDict.values()]
+    if any([np.isnan(v) for v in Yratio]):
+        logger.debug(f'x = {x}, Yratio = {Yratio}')
+    logger.debug(f'x = {x}, Yratio = {Yratio}')
+
+    coll_terms = [{} for _ in compDict.values()]
     for comp_i in compDict.values():        
         i = comp_i.ID
         if i == 0:
@@ -62,19 +67,28 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
         for process in model.collisionProcesses:
             if not process.changesPDG(comp_i.PDG):
                 continue
-            if comp_i.PDG in process.initialPDGs:
-                a_pdg,b_pdg = process.initialPDGs
-                c_pdg, d_pdg = process.finalPDGs                
-            else: # If the particle appears only as a final state reverse the initial and final states
-                a_pdg,b_pdg = process.finalPDGs
-                c_pdg, d_pdg = process.initialPDGs
             sigma = process.sigmaV(x)
+            if sigma <= 0.0:
+                continue
+            initialPDGs = process.initialPDGs
+            finalPDGs = process.finalPDGs
+            a_pdg,b_pdg = initialPDGs
+            c_pdg, d_pdg = finalPDGs
             a = compDict[a_pdg].ID
             b = compDict[b_pdg].ID
             c = compDict[c_pdg].ID
-            d = compDict[d_pdg].ID
+            d = compDict[d_pdg].ID            
+            r = Yratio[c]*Yratio[d]/(Yratio[a]*Yratio[b])
+            Cabcd = sigma*Y[a]*Y[b]*(1 - r)
+            # If the particle multiplicity in the final state is larger
+            # than in the initial state, the net result is particle creation,
+            # so the the signal of the collision term should be reversed:
+            if finalPDGs.count(comp_i.PDG) > initialPDGs.count(comp_i.PDG):
+                Cabcd = -Cabcd            
+            # Multiply sigma by Yeq_i*Yeq_j for convenience
+            # then we just need to multiply by ratios
             coll_terms[i].setdefault(process.name,0.0)
-            coll_terms[i][process.name] -= sigma*(Yratio[a]*Yratio[b]-Yratio[c]*Yratio[d])
+            coll_terms[i][process.name] -= Cabcd
 
     return coll_terms
 
@@ -112,7 +126,7 @@ def boltz(x: float, Y : List[float], model : ModelData):
         inj_term = np.sum(Dij[:,i])
         ### Collision term (i + a <-> b + c)
         coll_term = np.sum(list(coll_i[i].values()))
-
+        logger.debug(f'x = {x}, Decay = {dec_term}, Injection = {inj_term} and Collision = {coll_term}')
         dY[i] = (1/(3*H))*dsdx*(dec_term + inj_term + coll_term)
 
     return dY

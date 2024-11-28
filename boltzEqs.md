@@ -19,14 +19,16 @@ $$D_{ij} \equiv \sum_b \frac{K_1 (m_i/T)}{K_2(m_i/T)} \frac{\Gamma_i}{s}   BR(i 
 
 and the "collision terms":
 
-$$C_{ij,lm} \equiv  \langle \sigma v \rangle_{ij\to lm}  \left( Y_i Y_j - \bar{Y}_i \bar{Y}_j \frac{Y_l}{\bar{Y}_l} \frac{Y_m}{\bar{Y}_m}\right) = -C_{lm,ij} \frac{\bar{Y}_i \bar{Y}_j}{\bar{Y}_l \bar{Y}_m}$$
-and
+$$C_{ij,lm} \equiv  \langle \sigma v \rangle_{ij\to lm}  \left( Y_i Y_j - \bar{Y}_i \bar{Y}_j \frac{Y_l}{\bar{Y}_l} \frac{Y_m}{\bar{Y}_m}\right) = -C_{lm,ij}$$
+since:
+$$\langle \sigma v \rangle_{lm\to ij}  = \frac{\bar{Y}_i \bar{Y}_j}{\bar{Y}_l \bar{Y}_m} \langle \sigma v \rangle_{ij\to lm}$$
+In addition, we have:
 $$
 \frac{\Gamma_{i\rightarrow j}}{s} \equiv \bar{Y}_{SM} \langle \sigma v \rangle_{i0\to j0}
 $$
 where we have, for convenience, defined $Y_0 = Y_{\rm SM} = \bar{Y}_{SM} = \frac{\zeta(3)}{\pi^2}g^{*}_{S}(T) T^3/s = \frac{45}{2 \pi^4} \zeta(3) $ with $\frac{d Y_0}{dx} = 0$.
 
-we have:
+Therefore the Boltzmann equation can be written as:
 $$\frac{d Y_i}{dx} = \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[-C_{ii,00}  - C_{ij,00}   - C_{ii,jj} - C_{i0,j0} + \sum_j D_{ji} - \sum_j D_{ij} \right]$$
 $$\Rightarrow \frac{d Y_i}{dx} = \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[-\sum_{a,b,c} C_{ia,bc} + \sum_j D_{ji} - \sum_j D_{ij} \right]$$
 

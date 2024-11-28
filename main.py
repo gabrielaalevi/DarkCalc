@@ -139,7 +139,7 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
         if isinstance(comp_y0,float):
             y0[comp.ID] = y0
         elif comp_y0.lower() in ['eq', 'equilibrium']:
-            y0[comp.ID] = comp.Yeq(x0)
+            y0[comp.ID] = comp.Yeq(T0)
         else:
             logger.error(f"Could not set initial condition to {comp_y0}")
             return False
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     
     import argparse    
     ap = argparse.ArgumentParser( description=
-            "Run a (serial) MadGraph scan for the parameters defined in the parameters file." )
+            "Run a MadGraph scan for the parameters defined in the parameters file." )
     ap.add_argument('-p', '--parfile', default='input_parameters.ini',
             help='path to the parameters file [input_parameters.ini].')
     ap.add_argument('-v', '--verbose', default='info',

@@ -23,6 +23,17 @@ class Component(object):
         self.totalwidth = 0.0
         self.decays = None
 
+    def __str__(self) -> str:
+
+        if self.label:
+            return self.label
+        else:
+            return str(self.PDG)
+        
+    def __repr__(self) -> str:
+        return str(self)
+        
+
     
     def setDecays(self, totalwidth : float, decays : list, pdgList : List[int]) -> None:
 
@@ -113,7 +124,7 @@ class CollisionProcess(object):
 
     def setSigmaV(self, xlist : List[float], sigmavList : List[float]):
 
-        sigmaV = interp1d(xlist,sigmavList,fill_value=0.0,bounds_error=False)
+        sigmaV = interp1d(xlist,sigmavList,fill_value="extrapolate",bounds_error=False)
         self.sigmaV = sigmaV
 
 
