@@ -1,7 +1,6 @@
 #this module creates the boltzmann equation for each component
 
 import numpy as np
-from scipy.special import kn
 import thermal.equilibriumDensities as eqDensitities
 from modelData import ModelData
 from typing import List, Dict
@@ -31,7 +30,9 @@ def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike
         i = comp_i.ID
         Y_i = Y[i]
         Yeq_i = comp_i.Yeq(T)
-        gamma_i = (kn(1,comp_i.mass/T)/kn(2,comp_i.mass/T))
+        gamma_i = comp_i.gammaInv(T)
+        if np.isnan(gamma_i) or gamma_i > 1.0:
+            logger.error(f'Error computing gamma for {comp_i}: T = {T}, x = {comp_i.mass/T}, gamma = {gamma_i}')
         #loop over all the possible decays
         for daughter_pdgs,br in comp_i.decays.items():
             daughters = [compDict[pdg] for pdg in daughter_pdgs]                
@@ -49,14 +50,6 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
     mDM = compDict[model.dmPDG].mass
     T = mDM/x
             
-    # Pre-compute collision factors:
-    Yratio = np.ones(len(Y))
-    for comp in compDict.values():
-        Yratio[comp.ID] = Y[comp.ID]/comp.Yeq(T)
-
-    if any([np.isnan(v) for v in Yratio]):
-        logger.debug(f'x = {x}, Yratio = {Yratio}')
-    logger.debug(f'x = {x}, Yratio = {Yratio}')
 
     coll_terms = [{} for _ in compDict.values()]
     for comp_i in compDict.values():        
@@ -74,12 +67,14 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
             finalPDGs = process.finalPDGs
             a_pdg,b_pdg = initialPDGs
             c_pdg, d_pdg = finalPDGs
-            a = compDict[a_pdg].ID
-            b = compDict[b_pdg].ID
-            c = compDict[c_pdg].ID
-            d = compDict[d_pdg].ID            
-            r = Yratio[c]*Yratio[d]/(Yratio[a]*Yratio[b])
-            Cabcd = sigma*Y[a]*Y[b]*(1 - r)
+            a = compDict[a_pdg]
+            b = compDict[b_pdg]
+            c = compDict[c_pdg]
+            d = compDict[d_pdg]    
+            r_eq = a.Yeq(T)*b.Yeq(T)
+            if r_eq > 0.0:
+                r_eq = r_eq/(c.Yeq(T)*d.Yeq(T))
+            Cabcd = sigma*(Y[a.ID]*Y[b.ID] - Y[c.ID]*Y[d.ID]*r_eq)
             # If the particle multiplicity in the final state is larger
             # than in the initial state, the net result is particle creation,
             # so the the signal of the collision term should be reversed:
@@ -92,7 +87,7 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
 
     return coll_terms
 
-def boltz(x: float, Y : List[float], model : ModelData):
+def dYdx(x: float, Y : List[float], model : ModelData):
     """
     Boltzmann equations for the BSM components. Assumes the energy density is dominated by radiation
     and the SM degrees of freedom.
@@ -109,7 +104,7 @@ def boltz(x: float, Y : List[float], model : ModelData):
     # The zero component is the SM, so we set dY = 0 and Y = Yeq always
     Y[0] = compDict[0].Yeq(T)
     H = eqDensitities.H(T) #hubble rate at temperature T
-    dsdx = eqDensitities.dSdx(x, mDM) #variation of entropy with x
+    dsdx = np.abs(eqDensitities.dSdx(x, mDM)) #variation of entropy with x
 
     Dij = computeDecayTerms(x,Y,model)
     coll_i = computeCollisionTerms(x,Y,model)
@@ -126,7 +121,9 @@ def boltz(x: float, Y : List[float], model : ModelData):
         inj_term = np.sum(Dij[:,i])
         ### Collision term (i + a <-> b + c)
         coll_term = np.sum(list(coll_i[i].values()))
-        logger.debug(f'x = {x}, Decay = {dec_term}, Injection = {inj_term} and Collision = {coll_term}')
+        logger.debug(f'x = {x:1.2e}, Decay = {dec_term:1.3e}, Injection = {inj_term:1.3e} and Collision = {coll_term:1.3e}')
         dY[i] = (1/(3*H))*dsdx*(dec_term + inj_term + coll_term)
-
+    dYStr = ','.join([f"{dy:1.2e}" for dy in dY])
+    YStr = ','.join([f"{y:1.2e}" for y in Y])
+    logger.debug(f'Result: x = {x:1.2e}, Y = {YStr}, dY = {dYStr}\n')
     return dY

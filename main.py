@@ -113,7 +113,10 @@ def loadModel(parser : dict, outputFolder: str) -> ModelData:
     
 
     dm = parser['Model']['darkmatter']
-    bsmList = str(parser['Model']['bsmParticles']).split(',')
+    if 'bsmParticles' in parser['Model']:
+        bsmList = str(parser['Model']['bsmParticles']).split(',')
+    else:
+        bsmList = []
     model = ModelData(dmPDG=dm, bsmPDGList=bsmList, paramCard=paramCard, sigmaVfile=sigmaVFile)
     logger.info(f'Successfully loaded {model}')
 
@@ -135,20 +138,22 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
     x0 = mDM/T0
     xf = mDM/Tf    
 
-    # Set initila conditions
-    initialCond = pars['initialConditions']    
-    y0 = np.zeros(len(model.componentsDict))
-    for label,comp_y0 in initialCond.items():
-        pdg = model.convert2PDG(label)
-        comp = compDict[pdg]
-        
-        if isinstance(comp_y0,float):
-            y0[comp.ID] = y0
-        elif comp_y0.lower() in ['eq', 'equilibrium']:
-            y0[comp.ID] = comp.Yeq(T0)
-        else:
-            logger.error(f"Could not set initial condition to {comp_y0}")
-            return False
+    
+    # Initialize all components in equilibrium
+    y0 = np.array([comp.Yeq(T0) for comp in compDict.values()])    
+    if 'initialConditions' in pars:
+        # Set initila conditions
+        initialCond = pars['initialConditions']    
+        for label,comp_y0 in initialCond.items():
+            pdg = model.convert2PDG(label)
+            comp = compDict[pdg]            
+            if isinstance(comp_y0,float):
+                y0[comp.ID] = y0
+            elif comp_y0.lower() in ['eq', 'equilibrium']:
+                continue # Already set
+            else:
+                logger.error(f"Could not set initial condition to {comp_y0}")
+                return False
         
     xvals = np.linspace(x0,xf,nsteps)
     solution = solveBoltzEqs(xvals,Y0=y0,model=model,

@@ -4,6 +4,7 @@
 from thermal.equilibriumDensities import Neq, Yeq, gstar
 from typing import List, Dict, Optional
 from scipy.interpolate import interp1d
+from scipy.special import kn
 from tools.logger import logger
 import numpy as np
 import pyslha
@@ -76,6 +77,22 @@ class Component(object):
         
         return yeq    
    
+    def gammaInv(self,T: float) -> float:
+        """
+        Computes the inverse of the relativistic factor (1/gamma), which is used
+        when computing effective decay rates.
+        For small T or large T (compared to the component's mass) it is useful to expand
+        the factor to avoid numerical instabilities.
+        """
+
+        x = self.mass/T
+        if x > 10: # relativistic regime
+            return 1.0 - 3.0/(2*x) + 15./(8*x**2)
+        elif x < 0.05: # non-relativistic regime
+            return x/2.0
+        else:
+            return kn(1,x)/kn(2,x)
+
 
 class CollisionProcess(object):
     """
