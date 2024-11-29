@@ -13,7 +13,7 @@ from scipy.integrate import OdeSolution
 import subprocess
 import multiprocessing
 import tempfile
-import time,datetime
+import time,datetime, shutil
 from modelData import ModelData
 import numpy as np
 
@@ -58,6 +58,9 @@ def runMadDM(parser : dict) -> str:
     commandsFileF.write('generate relic_density\n')
     commandsFileF.write(f'output {outputFolder}\n')
     commandsFileF.write('launch\n')
+    if 'paramCard' in parser['Model']:
+        paramCard = os.path.abspath(parser['Model']['paramCard'])
+        commandsFileF.write(f'{paramCard} \n')
     comms = parser["SetParameters"]
     #Set model parameters
     for key,val in comms.items():
@@ -69,18 +72,18 @@ def runMadDM(parser : dict) -> str:
         pStr = ' '.join(pList)
         commandsFileF.write(f'compute_widths {pStr}\n')
         commandsFileF.write('done\n')
-        commandsFileF.close()
-        mg5Folder = parser['Options']['MadGraphPath']
-        mg5Folder = os.path.abspath(mg5Folder)        
-        if not os.path.isfile(os.path.join(mg5Folder,'bin','maddm.py')):
-            logger.error(f'Executable maddm.py not found in {mg5Folder}')
-            return False
-        # Comput widths
-        with open(cFilePath, 'r') as f: 
-            logger.debug(f'Running MadDM with commands:\n {f.read()} \n')
-        run = subprocess.Popen(f'./bin/maddm.py -f {cFilePath}',shell=True,
-                                    stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-                                    cwd=mg5Folder)
+    commandsFileF.close()
+    mg5Folder = parser['Options']['MadGraphPath']
+    mg5Folder = os.path.abspath(mg5Folder)        
+    if not os.path.isfile(os.path.join(mg5Folder,'bin','maddm.py')):
+        logger.error(f'Executable maddm.py not found in {mg5Folder}')
+        return False
+    # Comput widths
+    with open(cFilePath, 'r') as f: 
+        logger.debug(f'Running MadDM with commands:\n {f.read()} \n')
+    run = subprocess.Popen(f'./bin/maddm.py -f {cFilePath}',shell=True,
+                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                                cwd=mg5Folder)
         
         
          
