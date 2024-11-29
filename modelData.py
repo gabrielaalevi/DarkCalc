@@ -148,8 +148,8 @@ class ModelData(object):
         if dmPDG not in bsmPDGList:
             bsmPDGList.append(dmPDG)
 
-        if len(bsmPDGList) != 2:
-            logger.error(f"The Model can only contain two BSM Particles (not {len(bsmPDGList)}!)")
+        if len(bsmPDGList) > 2:
+            logger.error(f"The Model can only contain up to two BSM Particles (not {len(bsmPDGList)}!)")
             raise ValueError()
         elif 0 in bsmPDGList:
             logger.error(f"The Model can not contain BSM Particles with PDG = 0!")

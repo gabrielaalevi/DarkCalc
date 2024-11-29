@@ -40,9 +40,12 @@ def runMadDM(parser : dict) -> str:
             return False
 
     dm = parser['Model']['darkmatter']
-    bsmList = str(parser['Model']['bsmParticles']).split(',')
-    # Make sure the dmPDG does not appear twice
-    bsmList = [p for p in bsmList[:] if p != dm]
+    if 'bsmParticles' in parser['Model']:
+        bsmList = str(parser['Model']['bsmParticles']).split(',')
+        # Make sure the dmPDG does not appear twice
+        bsmList = [p for p in bsmList[:] if p != dm]
+    else:
+        bsmList = []
 
     #Generate commands file:       
     commandsFile,cFilePath = tempfile.mkstemp(suffix='.txt', prefix='maddm_commands_', dir=outputFolder)    
