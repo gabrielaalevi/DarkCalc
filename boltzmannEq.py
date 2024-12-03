@@ -35,12 +35,12 @@ def boltz(x, Y, comp_names, SM, mDM, x_new):
                         if (comp.decayreactions[j][0][l]) == comp_product.PDG:
                             dec_term *= Y[comp_product.ID]/comp_product.equilibriumyield(x, mDM)
                             product.append(comp_product.ID)
-                dY[i] += (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
+                dY[i] += (1/(3 * H)) * dsdx * (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
                 a = (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM) *dec_term)
                 print('comp', comp.type, 'products', product, 'a', a)
                 for l in range(0, len(product)):
                 #adding the correspondent source term to the dY equation of each product
-                    dY[(product[l])] += - (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM)* dec_term)
+                    dY[(product[l])] += - (1/(3 * H)) * dsdx * (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[i] - comp.equilibriumyield(x, mDM)* dec_term)
         
     #collision term for component i
         for m in range(0, len(comp.collisions)):
@@ -98,6 +98,7 @@ def debug_func(x, Y, comp_names, SM, mDM, x_new):
     dsdx = auxFunc.dsdx(x, mDM) #variation of entropy with x
     s = auxFunc.entropydensity(x, mDM) #entropy density at temperature T
     tol = abs(x - x_new[0])
+    T = mDM/x
     index = 0
     for p in range(0, len(x_new)):
     #loop to find the value of x closest to the one being used by odeint, necessary to call the right element of the cross section and decay width arrays
@@ -122,7 +123,7 @@ def debug_func(x, Y, comp_names, SM, mDM, x_new):
                         if (comp.decayreactions[j][0][l]) == comp_product.PDG:
                             dec_term *= Y[2* comp_product.ID]/Y[2 * comp_product.ID + 1]
                             product.append(comp_product.ID)
-                reaction_terms[counter] = (Y[(2*i) + 1] * s * comp.decaywidth)/H #((1/(3 * H))*(kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[2*i] - Y[(2*i+1)] *dec_term))/H
+                reaction_terms[counter] = ((1/(3 * H))* dsdx * (kn(1, comp.mass/T)/kn(2, comp.mass/T)) * (comp.decaywidth/s) * (Y[2*i] - Y[(2*i+1)] *dec_term))/H
                 counter += 1
     #collision term for component i
         for m in range(0, len(comp.collisions)):

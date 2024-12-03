@@ -88,6 +88,7 @@ def find_decays(part, param_path):
     #parsing through all the decays for part
         dec = decay[i]
         daughters = dec.ids
+        print(type(daughters[0]))
         dec_reaction = [daughters, dec.br]
         decayreactions.append(dec_reaction)
     print(decayreactions)
