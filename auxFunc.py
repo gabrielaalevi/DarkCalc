@@ -40,7 +40,7 @@ def equilibrium_yield(m, x, mDM, g):
     s = entropydensity(x, mDM) #entropy density
     if (m/T)>10: #non-relativistic regime
         Y_eq = (45/(4 * np.pi**4)) * (abs(g)/g_star) * (m/T)**(1.5) * np.sqrt(np.pi/2) * np.exp(-m/T) * (1 + (15/(8 * (m/T))) + 105/(128 * (m/T)**2) - (315/(1024 * (m/T)**3) )) #(abs(g) * (m * T/ (2 * math.pi))**(3/2) * math.exp(-m/T))/s
-    if (m/T)>(2/3): #semi-relativistic regime
+    elif (m/T)>(2/3): #semi-relativistic regime
         Y_eq = ((abs(g)/(2 * np.pi**2)) * ( T * m**2)* kn(2, m/T)/s) #(45 * abs(g) * (m/T)**2 * kn(2,(m/T)))/(4 * math.pi**4 * g_star)
     elif (m/T)<=(2/3): #relativistic regime
         if g > 0: #fermions
