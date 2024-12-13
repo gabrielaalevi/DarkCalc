@@ -9,7 +9,7 @@ from components import Component
 
 nsteps = 1000000 #number of values of x to be used
 T_i = 555 #initial temperature, in GeV
-T_f = 5 #final temperature, in GeV
+T_f = 12.5 #final temperature, in GeV
 taacs_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\taacs.csv' #path to the taacs.csv
 processes_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\processes_taacs.csv' #path to the processes_taacs.csv
 param_path = r'C:\Users\Gabi\Downloads\Faculdade\Diss\Code with MADDM\param_card.dat' #path to the param_card
@@ -26,7 +26,7 @@ pnames = [['DM', 'xm', 52,1],
 
 debug_version = True #if true, the output includes the value of each term in the Boltzmann Equation for each
 #reaction, allowing for a better analysis of the result
-name_file = 'model xm-b2' #name of the output file
+name_file = 'CDFO 2' #name of the output file
 
 
 
@@ -69,7 +69,6 @@ for i in range(0, len(pnames)):
         col_processes = find_processes_col(part, x, BSM, nsteps, taacs_path, processes_path)
         part_width = param_card.decays[part_pdg].totalwidth
         dec_reactions = find_decays(part_pdg, param_path)
-        print(dec_reactions)
         dof = find_dof(part, part_pdg, param_path)
         comp = Component(pnames[i][0], pnames[i][1], pnames[i][2], i, pnames[i][3], part_mass, dof, x, col_processes,part_width, dec_reactions)
     comp_names.append(comp)
