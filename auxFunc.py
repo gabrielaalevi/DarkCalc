@@ -7,14 +7,18 @@ m_planck = 2.4 * 10**(18) #reduced planck mass, in GeV
 #calculates the number of relativistic degrees of freedom for temperature T (in GeV), using solely the SM degrees of freedom
 def degrees_of_freedom(x, mDM):
     T = mDM/x
-    if T >= 1:
+    if T >= 100:
         g_star = 106.75
-    elif T >= 0.04:
-        g_star = 61
-    elif T >= 0.0005:
-        g_star = 10
-    else:
-        g_star = 3
+    elif T >= 70:
+        g_star = 96.25
+    elif T>= 10:
+        g_star = 86.25
+    elif T>=1:
+        g_star = 75.75
+    elif T>= 0.25:
+        g_star = 61.75
+    elif T>= 0.01:
+        g_star = 17.25
     return g_star
 
 #calculates the hubble rate H based on the temperature T (in GeV)
