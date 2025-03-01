@@ -9,6 +9,9 @@ from tools.logger import logger
 import numpy as np
 import pyslha
 from typing import List, Dict, Union
+from tools.logger import logger
+import os
+
 
 
 
@@ -200,6 +203,33 @@ class ModelData(object):
     
     def __repr__(self) -> str:
         return str(self)
+    
+    @classmethod
+    def loadModel(cls, parser : dict, outputFolder: str) -> "ModelData":
+
+        logger.debug(f'Loading model from {outputFolder}')
+        if not os.path.isdir(outputFolder):
+            logger.error(f'Output folder {outputFolder} not found')
+            return False
+        paramCard = os.path.join(outputFolder,'Cards','param_card.dat')
+        if not os.path.isfile(paramCard):
+            logger.error(f'Parameters card {paramCard} not found')
+            return False
+        sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
+        if not os.path.isfile(sigmaVFile):
+            logger.error(f'Sigmav file {sigmaVFile} not found')
+            return False
+        
+
+        dm = parser['Model']['darkmatter']
+        if 'bsmParticles' in parser['Model']:
+            bsmList = str(parser['Model']['bsmParticles']).split(',')
+        else:
+            bsmList = []
+        model = ModelData(dmPDG=dm, bsmPDGList=bsmList, paramCard=paramCard, sigmaVfile=sigmaVFile)
+        logger.info(f'Successfully loaded {model}')
+
+        return model
 
     def getParticleDataFrom(self, paramCard : str):
 
@@ -258,7 +288,6 @@ class ModelData(object):
                proc.initialPDGs = [x if x in self.pdgList else 0 for x in initPDGs ]
                finalPDGs = proc.finalPDGs[:]
                proc.finalPDGs = [x if x in self.pdgList else 0 for x in finalPDGs ]
-
 
     def getQnumbersFrom(self,paramCard : str) -> Dict[int,Dict]:
 
@@ -334,15 +363,13 @@ class ModelData(object):
                finalPDGs = proc.finalPDGs[:]
                proc.finalPDGs = [x if x in self.pdgList else 0 for x in finalPDGs ]
 
-
     def createLabel2PDGDict(self) -> None:
         if not hasattr(self,'_label2pdgDict'):
             self._label2pdgDict = {comp.label : comp.PDG 
                          for comp in self.componentsDict.values()}
             self._label2pdgDict.update({comp.PDG : comp.PDG 
                          for comp in self.componentsDict.values()})
-        
-        
+   
     def convert2PDG(self,label : str) -> int:
        
         return self._label2pdgDict[label]

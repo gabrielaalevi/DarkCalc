@@ -7,159 +7,16 @@ from __future__ import print_function
 import sys,os
 from tools.configParserWrapper import ConfigParserExt
 from tools.logger import logger,setLogLevel
-from boltz.boltzSolver import solveBoltzEqs
+from tools.maddm_interface import runMadDM
+from tools.modelData import ModelData
+from boltz.boltzSolver import runSolver
 from boltz.boltzmannEq import computeCollisionTerms,computeDecayTerms
-from scipy.integrate import OdeSolution
-import subprocess
 import multiprocessing
-import tempfile
-import time,datetime, shutil
-from modelData import ModelData
+import time,datetime
 import numpy as np
 
-def runMadDM(parser : dict) -> str:
-    """
-    Run MadDM to compute widths and relevant collision cross-sections.
-    
-    :param parser: Dictionary with parser sections.
-    
-    :return: True if successful. Otherwise False.
-    """
-        
-    #Get run folder:    
-    outputFolder = os.path.abspath(parser['Options']['outputFolder'])
-    if not os.path.isdir(outputFolder):
-        os.makedirs(outputFolder)    
-    
-    modelDir = os.path.abspath(parser['Model']['modelDir'])
-    if not os.path.isdir(modelDir):
-        # Check for model restriction in the name
-        mDir = modelDir.rsplit('-',1)[0]
-        if not os.path.isdir(mDir):
-            logger.error(f'Model folder {modelDir} (or {mDir}) not found')
-            return False
 
-    dm = parser['Model']['darkmatter']
-    if 'bsmParticles' in parser['Model']:
-        bsmList = str(parser['Model']['bsmParticles']).split(',')
-        # Make sure the dmPDG does not appear twice
-        bsmList = [p for p in bsmList[:] if p != dm]
-    else:
-        bsmList = []
 
-    #Generate commands file:       
-    commandsFile,cFilePath = tempfile.mkstemp(suffix='.txt', prefix='maddm_commands_', dir=outputFolder)    
-    os.close(commandsFile)
-    commandsFileF = open(cFilePath,'w')
-    commandsFileF.write(f'import model {modelDir}\n')
-    commandsFileF.write(f'define darkmatter {dm}\n')
-    for p in bsmList:
-        commandsFileF.write(f'define coannihilator {p}\n')
-    commandsFileF.write('generate relic_density\n')
-    commandsFileF.write(f'output {outputFolder}\n')
-    commandsFileF.write('launch\n')
-    if 'paramCard' in parser['Model']:
-        paramCard = os.path.abspath(parser['Model']['paramCard'])
-        commandsFileF.write(f'{paramCard} \n')
-    comms = parser["SetParameters"]
-    #Set model parameters
-    for key,val in comms.items():
-        commandsFileF.write(f'set {key} {val}\n')
-    
-    
-    if 'computeWidths' in parser['Model']:
-        pList = str(parser['Model']['computeWidths']).split(',')
-        pStr = ' '.join(pList)
-        commandsFileF.write(f'compute_widths {pStr}\n')
-        commandsFileF.write('done\n')
-    commandsFileF.close()
-    mg5Folder = parser['Options']['MadGraphPath']
-    mg5Folder = os.path.abspath(mg5Folder)        
-    if not os.path.isfile(os.path.join(mg5Folder,'bin','maddm.py')):
-        logger.error(f'Executable maddm.py not found in {mg5Folder}')
-        return False
-    # Comput widths
-    with open(cFilePath, 'r') as f: 
-        logger.debug(f'Running MadDM with commands:\n {f.read()} \n')
-    run = subprocess.Popen(f'./bin/maddm.py -f {cFilePath}',shell=True,
-                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-                                cwd=mg5Folder)
-        
-        
-         
-    output,errorMsg = run.communicate()
-    logger.debug(f'MadDM process error:\n {errorMsg.decode("utf-8")} \n')
-    logger.debug(f'MadDM process output:\n {output.decode("utf-8")} \n')
-
-    if os.path.isfile(cFilePath):
-        os.remove(cFilePath)
-        
-    return outputFolder
-
-def loadModel(parser : dict, outputFolder: str) -> ModelData:
-
-    logger.debug(f'Loading model from {outputFolder}')
-    if not os.path.isdir(outputFolder):
-        logger.error(f'Output folder {outputFolder} not found')
-        return False
-    paramCard = os.path.join(outputFolder,'Cards','param_card.dat')
-    if not os.path.isfile(paramCard):
-        logger.error(f'Parameters card {paramCard} not found')
-        return False
-    sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
-    if not os.path.isfile(sigmaVFile):
-        logger.error(f'Sigmav file {sigmaVFile} not found')
-        return False
-    
-
-    dm = parser['Model']['darkmatter']
-    if 'bsmParticles' in parser['Model']:
-        bsmList = str(parser['Model']['bsmParticles']).split(',')
-    else:
-        bsmList = []
-    model = ModelData(dmPDG=dm, bsmPDGList=bsmList, paramCard=paramCard, sigmaVfile=sigmaVFile)
-    logger.info(f'Successfully loaded {model}')
-
-    return model
-
-def runSolver(parser : dict, model : ModelData) -> OdeSolution:
-    
-    logger.debug(f'Solving Boltzmann equations for {model}')
-
-    pars = parser['SolverParameters']
-    atol = pars['atol']
-    rtol = pars['rtol']
-    T0 = pars['T0']
-    Tf = pars['Tf']
-    method = pars['method']
-    nsteps = pars['nsteps']
-    compDict = model.componentsDict
-    mDM = compDict[model.dmPDG].mass
-    x0 = mDM/T0
-    xf = mDM/Tf    
-
-    
-    # Initialize all components in equilibrium
-    y0 = np.array([comp.Yeq(T0) for comp in compDict.values()])    
-    if 'initialConditions' in pars:
-        # Set initila conditions
-        initialCond = pars['initialConditions']    
-        for label,comp_y0 in initialCond.items():
-            pdg = model.convert2PDG(label)
-            comp = compDict[pdg]            
-            if isinstance(comp_y0,float):
-                y0[comp.ID] = y0
-            elif comp_y0.lower() in ['eq', 'equilibrium']:
-                continue # Already set
-            else:
-                logger.error(f"Could not set initial condition to {comp_y0}")
-                return False
-        
-    xvals = np.linspace(x0,xf,nsteps)
-    solution = solveBoltzEqs(xvals,Y0=y0,model=model,
-                             method=method,atol=atol,rtol=rtol)
-    
-    return solution
 
 def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
 
@@ -171,6 +28,9 @@ def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
     y_sol = solution.y
     headerList = ['x'] + [f'Y({label})' for label in labels] 
     data = np.array(list(zip(x_sol,*y_sol[1:])))
+    Ytot = sum(data[-1][1:])
+    omh2 = 0.12*Ytot/(6.8e-13)
+    logger.info(f'\n\nOmega*h^2 = {omh2:1.4g}\n')
 
     if extended:
         Dij_vec = []
@@ -193,11 +53,11 @@ def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
         
     header = ','.join(headerList)
     outFile = os.path.abspath(pars['outputFile'])
-    np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')
+    np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')  
 
     return True
 
-def runAll(parser : dict) -> bool:
+def runSolution(parser : dict) -> bool:
     """
     Run MadDM, load the model and solve the Boltzmann equations
 
@@ -206,7 +66,6 @@ def runAll(parser : dict) -> bool:
     :return: Dictionary with run info. False if failed.
     """
 
-    t0 = time.time()
     if 'skipMadDM' in parser['Options']:
         skipMadDM = bool(parser['Options']['skipMadDM'])
     else:
@@ -218,7 +77,7 @@ def runAll(parser : dict) -> bool:
     else:
         outputFolder = os.path.abspath(parser['Options']['outputFolder'])
     logger.info("Loading model")
-    model = loadModel(parser, outputFolder)
+    model = ModelData.loadModel(parser, outputFolder)
     logger.info("Model loaded")
     logger.info("Solving Boltzmann equations")
     sol = runSolver(parser,model)
@@ -262,7 +121,7 @@ def main(parfile,verbose):
         # Create temporary folder names if running in parallel
         parserDict = newParser.toDict(raw=False)
         logger.debug('submitting with pars:\n %s \n' %parserDict)
-        p = pool.apply_async(runAll, args=(parserDict,),)
+        p = pool.apply_async(runSolution, args=(parserDict,),)
         children.append(p)
 
 #     Wait for jobs to finish:
@@ -276,7 +135,7 @@ if __name__ == "__main__":
     
     import argparse    
     ap = argparse.ArgumentParser( description=
-            "Run a MadGraph scan for the parameters defined in the parameters file." )
+            "Runs MadDM to compute cross-sections and solve the Boltzmann equations for the parameters defined in the parameters file." )
     ap.add_argument('-p', '--parfile', default='input_parameters.ini',
             help='path to the parameters file [input_parameters.ini].')
     ap.add_argument('-v', '--verbose', default='info',

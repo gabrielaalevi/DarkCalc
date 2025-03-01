@@ -2,7 +2,7 @@
 
 import numpy as np
 import thermal.equilibriumDensities as eqDensitities
-from modelData import ModelData
+from tools.modelData import ModelData
 from typing import List, Dict
 from numpy.typing import ArrayLike
 from tools.logger import logger
