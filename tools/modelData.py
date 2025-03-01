@@ -195,9 +195,11 @@ class ModelData(object):
 
         dmLabel = self.componentsDict[self.dmPDG].label
         smLabel = self.componentsDict[0].label
-        mStr = f'Model : {smLabel} + {dmLabel}(DM) + '
-        mStr += ' + '.join([comp.label for comp in self.componentsDict.values() 
-                            if comp.label not in [dmLabel,smLabel]])
+        otherBSMLabels = [comp.label for comp in self.componentsDict.values() 
+                            if comp.label not in [dmLabel,smLabel]]
+        mStr = f'Model : {smLabel} + {dmLabel}(DM)'
+        if otherBSMLabels:
+            mStr += '+' + ' + '.join(otherBSMLabels)
 
         return mStr
     
