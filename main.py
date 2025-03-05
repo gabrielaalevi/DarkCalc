@@ -72,12 +72,13 @@ def runSolution(parser : dict) -> bool:
         skipMadDM = False
     if not skipMadDM:
         logger.info("Running MadDM")
-        outputFolder = runMadDM(parser)
+        outputFile = runMadDM(parser)
         logger.info("Finished MadDM run")
     else:
         outputFolder = os.path.abspath(parser['Options']['outputFolder'])
+        outputFile = os.path.join(outputFolder,'darkcalc_banner.txt')
     logger.info("Loading model")
-    model = ModelData.loadModel(parser, outputFolder)
+    model = ModelData.loadModel(parser, outputFile)
     logger.info("Model loaded")
     logger.info("Solving Boltzmann equations")
     sol = runSolver(parser,model)

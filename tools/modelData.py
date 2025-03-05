@@ -157,8 +157,7 @@ class ModelData(object):
 
     def __init__(self, dmPDG : Union[int,str],  
                  bsmPDGList : Union[List[int],List[str]], 
-                 paramCard : Optional[str] = None,
-                 sigmaVfile : Optional[str] = None):
+                 inputFile : Optional[str] = None):
         """
         :param bsmPDGList: Used to selected the BSM particles to include in the Boltzmann equations. 
                             Currently only a Dark Matter and a Mediator are allowed.
@@ -186,10 +185,9 @@ class ModelData(object):
         self.dmPDG = dmPDG # Dark Matter PDG code
         self.pdgList = bsmPDGList[:]
 
-        if paramCard is not None:
-            self.getParticleDataFrom(paramCard)            
-        if sigmaVfile is not None:
-            self.getCollisionProcessesFrom(sigmaVfile)
+        if inputFile is not None:
+            self.getParticleDataFrom(inputFile)
+            self.getCollisionProcessesFrom(inputFile)
 
     def __str__(self) -> str:
 
@@ -207,19 +205,11 @@ class ModelData(object):
         return str(self)
     
     @classmethod
-    def loadModel(cls, parser : dict, outputFolder: str) -> "ModelData":
+    def loadModel(cls, parser : dict, outputFile: str) -> "ModelData":
 
-        logger.debug(f'Loading model from {outputFolder}')
-        if not os.path.isdir(outputFolder):
-            logger.error(f'Output folder {outputFolder} not found')
-            return False
-        paramCard = os.path.join(outputFolder,'Cards','param_card.dat')
-        if not os.path.isfile(paramCard):
-            logger.error(f'Parameters card {paramCard} not found')
-            return False
-        sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
-        if not os.path.isfile(sigmaVFile):
-            logger.error(f'Sigmav file {sigmaVFile} not found')
+        logger.debug(f'Loading model from {outputFile}')
+        if not os.path.isdir(outputFile):
+            logger.error(f'Output file {outputFile} not found')
             return False
         
 
@@ -228,15 +218,21 @@ class ModelData(object):
             bsmList = str(parser['Model']['bsmParticles']).split(',')
         else:
             bsmList = []
-        model = ModelData(dmPDG=dm, bsmPDGList=bsmList, paramCard=paramCard, sigmaVfile=sigmaVFile)
+        model = ModelData(dmPDG=dm, bsmPDGList=bsmList, 
+                          inputFile=outputFile)
         logger.info(f'Successfully loaded {model}')
 
         return model
 
-    def getParticleDataFrom(self, paramCard : str):
+    def getParticleDataFrom(self, inputFile : str):
 
         # Get information from the param_card
-        particle_data = pyslha.read(paramCard)
+
+        with open(inputFile,'r') as f:
+            output_data = f.read()
+        paramCard_data = output_data.split('<slha>')[1].split('</slha>')[0]
+
+        particle_data = pyslha.read(paramCard_data)
         massDict = particle_data.blocks['MASS']
         decaysDict = particle_data.decays
         # We need a separate method to get the quantum numbers and particle labels

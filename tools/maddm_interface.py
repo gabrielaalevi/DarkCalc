@@ -88,4 +88,44 @@ def runMadDM(parser : dict) -> str:
         logger.error(f"Error computing sigmaV with MadDM ({sigmaVFile} not found)")
         return None
     else:
-        return outputFolder
+        return mergeOutput(outputFolder)
+
+def mergeOutput(outputFolder : str) -> str:
+    """
+    Combines the param_card and the sigmaVFile into a single file,
+    similar to the MadGraph banner.
+    Returns the new file name
+    """
+
+    paramCard = os.path.join(outputFolder,'Cards','param_card.dat')
+    if  not os.path.isfile(paramCard):
+        logger.error(f"Param card ({paramCard} not found)")
+        return None
+    sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
+    if not os.path.isfile(sigmaVFile):
+        logger.error(f"SigmaV file ({sigmaVFile} not found)")
+        return None
+
+    with open(paramCard,'r') as f:
+        paramCard = f.read()
+    with open(sigmaVFile,'r') as f:
+        sigmaV = f.read()
+
+    newFile = os.path.join(outputFolder,'darkcalc_banner.txt')
+    with open(newFile,'w') as f:
+        f.write("<DarkCalc version='1.0'>\n")
+        f.write("<header>")
+        f.write("<slha>\n")
+        f.write(paramCard)
+        f.write("</slha>\n")
+        f.write("<sigmav>\n")
+        f.write(sigmaV)
+        f.write("</sigmav>\n")
+        f.write("</header>")
+        f.write("</DarkCalc>")
+
+    return newFile
+
+
+        
+
