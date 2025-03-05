@@ -121,8 +121,12 @@ def dYdx(x: float, Y : List[float], model : ModelData):
         inj_term = np.sum(Dij[:,i])
         ### Collision term (i + a <-> b + c)
         coll_term = np.sum(list(coll_i[i].values()))
-        logger.debug(f'x = {x:1.2e}, Decay = {dec_term:1.3e}, Injection = {inj_term:1.3e} and Collision = {coll_term:1.3e}')
-        dY[i] = (1/(3*H))*dsdx*(dec_term + inj_term + coll_term)
+        ### Divide by expansion rate
+        dec_term = (dec_term/(3*H))*dsdx
+        inj_term = (inj_term/(3*H))*dsdx
+        coll_term = (coll_term/(3*H))*dsdx
+        logger.debug(f'{comp_i} : x = {x:1.2e}, dsdx/3H = {dsdx/(3*H):1.2e}, Decay = {dec_term:1.3e}, Injection = {inj_term:1.3e} and Collision = {coll_term:1.3e}')
+        dY[i] = (dec_term + inj_term + coll_term)
     dYStr = ','.join([f"{dy:1.2e}" for dy in dY])
     YStr = ','.join([f"{y:1.2e}" for y in Y])
     logger.debug(f'Result: x = {x:1.2e}, Y = {YStr}, dY = {dYStr}\n')

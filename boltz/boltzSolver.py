@@ -1,5 +1,5 @@
 
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp,odeint
 from boltz.boltzmannEq import dYdx
 from typing import List
 from tools.modelData import ModelData
@@ -41,7 +41,8 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
                 logger.error(f"Could not set initial condition to {comp_y0}")
                 return False
         
-    xvals = np.linspace(x0,xf,nsteps)
+    xvals = np.geomspace(x0,xf,nsteps)
+
     solution = solveBoltzEqs(xvals,Y0=y0,model=model,
                              method=method,atol=atol,rtol=rtol)
     
@@ -56,7 +57,8 @@ def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
     # Initial conditions
     x0, xf = xvals[0],xvals[-1]
     #solving the Boltzmann equation
-    sol = solve_ivp(dYdx, [x0,xf], Y0, args=(model,), atol = atol, rtol = rtol, method=method)
-    # sol1= odeint(boltz, y0, xvals, args=(model,), tfirst=True)
+    sol = solve_ivp(dYdx, [x0,xf], Y0, args=(model,), atol = atol, 
+                    rtol = rtol, method=method, t_eval=xvals)
+    # sol= odeint(dYdx, Y0, xvals, args=(model,), tfirst=True)
 
     return sol

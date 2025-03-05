@@ -199,7 +199,7 @@ class ModelData(object):
                             if comp.label not in [dmLabel,smLabel]]
         mStr = f'Model : {smLabel} + {dmLabel}(DM)'
         if otherBSMLabels:
-            mStr += '+' + ' + '.join(otherBSMLabels)
+            mStr += ' + ' + ' + '.join(otherBSMLabels)
 
         return mStr
     

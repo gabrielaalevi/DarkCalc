@@ -81,10 +81,12 @@ def runSolution(parser : dict) -> bool:
     logger.info("Model loaded")
     logger.info("Solving Boltzmann equations")
     sol = runSolver(parser,model)
-    logger.info("Solved Boltzmann equations")
-    logger.info("Saving solutions")
-    saveSolutions(parser,sol,model)
-
+    if sol.success:
+        logger.info("Solved Boltzmann equations")
+        logger.info("Saving solutions")
+        saveSolutions(parser,sol,model)
+    else:
+        logger.error(f"Error solving Boltzmann equations:\n {sol.message}\n")
     return sol
 
 
