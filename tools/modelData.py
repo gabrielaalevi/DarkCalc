@@ -209,7 +209,7 @@ class ModelData(object):
 
         logger.debug(f'Loading model from {bannerFile}')
         if not os.path.isfile(bannerFile):
-            logger.error(f'Output file {bannerFile} not found')
+            logger.error(f'Banner file {bannerFile} not found')
             return False
         
 
