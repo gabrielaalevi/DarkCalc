@@ -114,14 +114,14 @@ def mergeOutput(outputFolder : str) -> str:
     newFile = os.path.join(outputFolder,'darkcalc_banner.txt')
     with open(newFile,'w') as f:
         f.write("<DarkCalc version='1.0'>\n")
-        f.write("<header>")
+        f.write("<header>\n")
         f.write("<slha>\n")
         f.write(paramCard)
         f.write("</slha>\n")
         f.write("<sigmav>\n")
         f.write(sigmaV)
         f.write("</sigmav>\n")
-        f.write("</header>")
+        f.write("</header>\n")
         f.write("</DarkCalc>")
 
     return newFile

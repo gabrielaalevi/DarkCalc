@@ -157,7 +157,7 @@ class ModelData(object):
 
     def __init__(self, dmPDG : Union[int,str],  
                  bsmPDGList : Union[List[int],List[str]], 
-                 inputFile : Optional[str] = None):
+                 bannerFile : Optional[str] = None):
         """
         :param bsmPDGList: Used to selected the BSM particles to include in the Boltzmann equations. 
                             Currently only a Dark Matter and a Mediator are allowed.
@@ -185,9 +185,9 @@ class ModelData(object):
         self.dmPDG = dmPDG # Dark Matter PDG code
         self.pdgList = bsmPDGList[:]
 
-        if inputFile is not None:
-            self.getParticleDataFrom(inputFile)
-            self.getCollisionProcessesFrom(inputFile)
+        if bannerFile is not None:
+            self.getParticleDataFrom(bannerFile)
+            self.getCollisionProcessesFrom(bannerFile)
 
     def __str__(self) -> str:
 
@@ -205,11 +205,11 @@ class ModelData(object):
         return str(self)
     
     @classmethod
-    def loadModel(cls, parser : dict, outputFile: str) -> "ModelData":
+    def loadModel(cls, parser : dict, bannerFile: str) -> "ModelData":
 
-        logger.debug(f'Loading model from {outputFile}')
-        if not os.path.isdir(outputFile):
-            logger.error(f'Output file {outputFile} not found')
+        logger.debug(f'Loading model from {bannerFile}')
+        if not os.path.isfile(bannerFile):
+            logger.error(f'Output file {bannerFile} not found')
             return False
         
 
@@ -219,24 +219,24 @@ class ModelData(object):
         else:
             bsmList = []
         model = ModelData(dmPDG=dm, bsmPDGList=bsmList, 
-                          inputFile=outputFile)
+                          bannerFile=bannerFile)
         logger.info(f'Successfully loaded {model}')
 
         return model
 
-    def getParticleDataFrom(self, inputFile : str):
+    def getParticleDataFrom(self, bannerFile : str):
 
         # Get information from the param_card
 
-        with open(inputFile,'r') as f:
+        with open(bannerFile,'r') as f:
             output_data = f.read()
         paramCard_data = output_data.split('<slha>')[1].split('</slha>')[0]
 
-        particle_data = pyslha.read(paramCard_data)
+        particle_data = pyslha.readSLHA(paramCard_data)
         massDict = particle_data.blocks['MASS']
         decaysDict = particle_data.decays
         # We need a separate method to get the quantum numbers and particle labels
-        qnumbers = self.getQnumbersFrom(paramCard)
+        qnumbers = self.getQnumbersFrom(paramCard_data)
         labels2pdgs = {qnumbers[pdg]['label'] : pdg for pdg in qnumbers}
 
         # Convert labels to PDGs if labels were given as input
@@ -250,14 +250,14 @@ class ModelData(object):
         # Now restrict to the pdgs in bsmPDGList
         for pdg in self.pdgList:
             if pdg not in qnumbers:
-                logger.info(f'Particle with {pdg} not found in {paramCard}')
+                logger.info(f'Particle with {pdg} not found in {bannerFile}')
                 continue
             particleInfo = qnumbers[pdg]
             if pdg in massDict:
                 mass = massDict[pdg]
             else:
                 mass = 0.0
-                logger.info(f'Mas for particle {pdg} not found in {paramCard}. Setting the mass to zero')
+                logger.info(f'Mas for particle {pdg} not found in {bannerFile}. Setting the mass to zero')
             comp = Component(label=particleInfo['label'],PDG = pdg, 
                             mass = mass, g = particleInfo['dof'],
                             ID = len(self.componentsDict))
@@ -269,7 +269,7 @@ class ModelData(object):
             self.componentsDict[pdg] = comp
         
         if self.dmPDG not in self.componentsDict:
-            logger.error(f"Dark Matter (PDG = {self.dmPDG}) not found in {paramCard}")
+            logger.error(f"Dark Matter (PDG = {self.dmPDG}) not found in {bannerFile}")
             raise ValueError()
         
         # Set Dark Matter mass to use for scaling the temperature
@@ -289,8 +289,11 @@ class ModelData(object):
 
     def getQnumbersFrom(self,paramCard : str) -> Dict[int,Dict]:
 
-        with open(paramCard,'r') as f:
-            data = f.read()
+        if os.path.isfile(paramCard):
+            with open(paramCard,'r') as f:
+                data = f.read()
+        else:
+            data = paramCard[:]
 
         data = data.lower()
         qnumberBlocks = data.split('block qnumbers ')[1:]
@@ -328,10 +331,20 @@ class ModelData(object):
 
     def getCollisionProcessesFrom(self,sigmaVfile : str):
         
-        # Get process dictionary
-        with open(sigmaVfile) as f:
-            comment_lines =  [l.strip() for l in f.readlines() if l.strip()[0] == '#']
-            proc_lines = [l[1:].strip() for l in comment_lines if (l.count('#') == 1)]
+
+        if os.path.isfile(sigmaVfile):
+            with open(sigmaVfile,'r') as f:
+                data = f.read()
+        else:
+            data = sigmaVfile[:]
+        if "<sigmav>" in data:
+            data = data.split("<sigmav>")[1].split("</sigmav>")[0]
+        
+
+        lines = [l.strip() for l in data.splitlines() if l.strip()]
+        # Get process dictionary        
+        comment_lines =  [l for l in lines if l[0] == '#']
+        proc_lines = [l[1:].strip() for l in comment_lines if (l.count('#') == 1)]
         processDict = {}
         for l in proc_lines:    
             proc_index,proc_name,proc_pdgs = (l.split(',',2))
@@ -340,7 +353,7 @@ class ModelData(object):
             processDict[proc_index] = {'name' : proc_name.strip(), 
                                     'initialPDGs' : list(map(int, initialPDGs.split(','))), 
                                     'finalPDGs' : list(map(int, finalPDGs.split(',')))}
-        processes_data = np.genfromtxt(sigmaVfile, delimiter=',', skip_header=len(comment_lines), 
+        processes_data = np.genfromtxt(lines, delimiter=',', skip_header=len(comment_lines), 
                                     names=True)
         
         for proc_index,pInfo in processDict.items():
