@@ -40,7 +40,7 @@ c save the index of the annihilation processes in the process_relic_name_indexes
 c calculate taacs and save in matrix_taacs, for annihilation processes
 c (NOTE: for self-annihilation processes the cross-section includes a factor of 1/2, which should be cancelled)
             do k=1, size(x_values)
-               matrix_taacs(k, i_proc) =  2.0*taacs_coupled(x_values(k),x1,x2,x3,1)
+               matrix_taacs(k, i_proc) =  taacs_coupled(x_values(k),x1,x2,x3,1)
             enddo
             i_proc = i_proc + 1
           enddo

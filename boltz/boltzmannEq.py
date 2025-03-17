@@ -13,8 +13,7 @@ def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     T = mDM/x
-
-    compDict = model.componentsDict
+    
     # The zero component is the SM, so we set dY = 0 and Y = Yeq always    
     s = eqDensitities.S(T) #entropy density at temperature T
 
@@ -35,7 +34,7 @@ def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike
             logger.error(f'Error computing gamma for {comp_i}: T = {T}, x = {comp_i.mass/T}, gamma = {gamma_i}')
         #loop over all the possible decays
         for daughter_pdgs,br in comp_i.decays.items():
-            daughters = [compDict[pdg] for pdg in daughter_pdgs]                
+            daughters = [compDict[pdg] for pdg in daughter_pdgs]             
             daughter_ids = [daughter.ID for daughter in daughters]
             for j in sorted(np.unique(daughter_ids)):
                 Yprod = np.prod([Y[daughter.ID]/daughter.Yeq(T) for daughter in daughters])  
@@ -65,6 +64,11 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
                 continue
             initialPDGs = process.initialPDGs
             finalPDGs = process.finalPDGs
+            # The impact on the component i is proportional
+            # to the number of particles "i" destroyed in the initial state
+            # minus the number of particles "i" created in the final state:
+            factor = initialPDGs.count(comp_i.PDG)-finalPDGs.count(comp_i.PDG)
+            # Compute collision term:
             a_pdg,b_pdg = initialPDGs
             c_pdg, d_pdg = finalPDGs
             a = compDict[a_pdg]
@@ -74,14 +78,9 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
             r_eq = a.Yeq(T)*b.Yeq(T)
             if r_eq > 0.0:
                 r_eq = r_eq/(c.Yeq(T)*d.Yeq(T))
-            Cabcd = sigma*(Y[a.ID]*Y[b.ID] - Y[c.ID]*Y[d.ID]*r_eq)
-            # If the particle multiplicity in the final state is larger
-            # than in the initial state, the net result is particle creation,
-            # so the the signal of the collision term should be reversed:
-            if finalPDGs.count(comp_i.PDG) > initialPDGs.count(comp_i.PDG):
-                Cabcd = -Cabcd            
             # Multiply sigma by Yeq_i*Yeq_j for convenience
             # then we just need to multiply by ratios
+            Cabcd = factor*sigma*(Y[a.ID]*Y[b.ID] - Y[c.ID]*Y[d.ID]*r_eq)
             coll_terms[i].setdefault(process.name,0.0)
             coll_terms[i][process.name] -= Cabcd
 
