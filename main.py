@@ -29,27 +29,35 @@ def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
     headerList = ['x'] + [f'Y({label})' for label in labels] 
     data = np.array(list(zip(x_sol,*y_sol[1:])))
     Ytot = sum(data[-1][1:])
+    for i,label in enumerate(labels):
+        Y_i = data[-1][i+1]
+        om_i = 0.12*Y_i/(6.8e-13)
+        logger.info(f"Omega*h^2({label}) = {om_i:1.3e}")
+        
+    Ytot = sum(data[-1][1:])
     omh2 = 0.12*Ytot/(6.8e-13)
     logger.info(f'\n\nOmega*h^2 = {omh2:1.4g}\n')
 
     if extended:
-        Dij_vec = []
+        Di_vec = []
         Cij_vec = []
         proc_names = None
         for i,x in enumerate(x_sol):
             Y = y_sol[:,i]
-            Dij_vec.append(computeDecayTerms(x,Y,model)[1:,1:].flatten())
+            # Print decay terms
+            Di_vec.append([dec['decay'] for dec in computeDecayTerms(x,Y,model)][1:])
             c = computeCollisionTerms(x,Y,model)
             if proc_names is None:                
                 proc_names = [name for cc in c for name in cc.keys()]
             proc_values = [sigma for cc in c for sigma in cc.values()]
+            # Print collision terms for each process
             Cij_vec.append(proc_values)
         
         headerList += [f'D({labelA} -> {labelB})' for labelA in labels for labelB in labels]
         headerList += [f'C({proc_name})' for proc_name in proc_names]
-        data = np.hstack((data,Dij_vec))
+        
+        data = np.hstack((data,Di_vec))
         data = np.hstack((data,Cij_vec))
-
         
     header = ','.join(headerList)
     outFile = os.path.abspath(pars['outputFile'])
@@ -97,6 +105,11 @@ def main(parfile,verbose):
     setLogLevel(level)    
 
     parser = ConfigParserExt(inline_comment_prefixes="#")   
+    # Define default solver parameters
+    ret = parser.read_dict({'SolverParameters' : {'atol' : 0.0, 
+                                                  'rtol' : 1e-4, 
+                                                  'method' : 'Radau', 
+                                                  'nsteps' : 100}})
     ret = parser.read(parfile)
     if ret == []:
         logger.error( "No such file or directory: '%s'" % args.parfile)
