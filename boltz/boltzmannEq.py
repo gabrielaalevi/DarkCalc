@@ -8,8 +8,7 @@ from numpy.typing import ArrayLike
 from tools.logger import logger
 
 def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike:
-
-    mDM = model.mDM
+    
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     T = mDM/x
@@ -49,7 +48,6 @@ def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike
 
 def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[Dict[str,float]]:
 
-    mDM = model.mDM
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     T = mDM/x
@@ -101,7 +99,6 @@ def dYdx(x: float, Y : List[float], model : ModelData):
     :param model: Model data object holding information about the particles and collision processes.
     """
 
-    mDM = model.mDM
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     T = mDM/x

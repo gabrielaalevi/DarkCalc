@@ -11,6 +11,7 @@ from tools.maddm_interface import runMadDM
 from tools.modelData import ModelData
 from boltz.boltzSolver import runSolver
 from boltz.boltzmannEq import computeCollisionTerms,computeDecayTerms
+import thermal.equilibriumDensities as eqDensitities
 import multiprocessing
 import time,datetime
 import numpy as np
@@ -39,22 +40,26 @@ def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
     logger.info(f'\n\nOmega*h^2 = {omh2:1.4g}\n')
 
     if extended:
+        mDM = compDict[model.dmPDG].mass
         Di_vec = []
         Cij_vec = []
         proc_names = None
         for i,x in enumerate(x_sol):
+            H = eqDensitities.H(mDM/x) #hubble rate at temperature T
+            dsdx = np.abs(eqDensitities.dSdx(x, mDM)) #variation of entropy with x
             Y = y_sol[:,i]
             # Print decay terms
-            Di_vec.append([dec['decay'] for dec in computeDecayTerms(x,Y,model)][1:])
+            Di_vec.append([(dec['decay']/(3*H))*dsdx for dec in computeDecayTerms(x,Y,model)][1:])
             c = computeCollisionTerms(x,Y,model)
             if proc_names is None:                
                 proc_names = [name for cc in c for name in cc.keys()]
-            proc_values = [sigma for cc in c for sigma in cc.values()]
+            proc_values = [(sigma/(3*H))*dsdx 
+                           for cc in c for sigma in cc.values()]
             # Print collision terms for each process
             Cij_vec.append(proc_values)
         
-        headerList += [f'D({labelA} -> {labelB})' for labelA in labels for labelB in labels]
-        headerList += [f'C({proc_name})' for proc_name in proc_names]
+        headerList += [f'D({labelA})*(dsdx/3H)' for labelA in labels]
+        headerList += [f'C({proc_name})*(dsdx/3H)' for proc_name in proc_names]
         
         data = np.hstack((data,Di_vec))
         data = np.hstack((data,Cij_vec))
