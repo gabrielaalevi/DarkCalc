@@ -65,6 +65,29 @@ class Colors:
 
 colors = Colors()
 
+class CustomFormatter(logging.Formatter):
+
+    blue = "\033[36m"
+    white = "\033[38m"
+    yellow = "\x1b[31m"
+    red = "\033[35m"
+    purple = "\033[34m"
+    reset = "\033[1;0m"
+    format = "({asctime}) {levelname} in {module}.{funcName} : {message}"
+
+    FORMATS = {
+        logging.DEBUG: white + format + reset,
+        logging.INFO: blue + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: "\n" + red + format + reset + "\n",
+        logging.CRITICAL: purple + format + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt, style="{", 
+                                  datefmt='%H:%M:%S',)
+        return formatter.format(record)
 
 class ColorizedStreamHandler(logging.StreamHandler):
     def _color_wrap(self, *c):
@@ -106,19 +129,13 @@ class ColorizedStreamHandler(logging.StreamHandler):
         return msg
 
 def getLogger ():
-    FORMAT = '{levelname} in {module}.{funcName} : {message} at {asctime}'
-    logging.basicConfig(format=FORMAT,
-                        level=logging.INFO,
-                        # datefmt='%Y-%m-%d %H:%M:%S',
-                        style="{")
-    formatter = logging.Formatter( FORMAT , 
-                                  style="{", 
-                                  datefmt='%H:%M:%S',)
+   
     ch = ColorizedStreamHandler()
-    ch.setFormatter ( formatter )
+    ch.setFormatter ( CustomFormatter() )
     logger = logging.getLogger("boltz")
     logger.addHandler(ch)
     logger.propagate = False
+    
     return logger
 
 logger = getLogger()
