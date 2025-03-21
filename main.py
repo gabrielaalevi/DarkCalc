@@ -93,10 +93,12 @@ def runSolution(parser : dict) -> bool:
     logger.info("Loading model")
     model = ModelData.loadModel(parser, outputFile)
     logger.info("Model loaded")
+    t0 = time.time()
     logger.info("Solving Boltzmann equations")
     sol = runSolver(parser,model)
     if sol.success:
-        logger.info("Solved Boltzmann equations")
+        dt = (time.time()-t0)
+        logger.info(f"Solved Boltzmann equations in {dt:1.1f} s")
         logger.info("Saving solutions")
         saveSolutions(parser,sol,model)
     else:

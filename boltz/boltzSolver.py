@@ -34,7 +34,7 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
             pdg = model.convert2PDG(label)
             comp = compDict[pdg]            
             if isinstance(comp_y0,float):
-                y0[comp.ID] = y0
+                y0[comp.ID] = comp_y0
             elif comp_y0.lower() in ['eq', 'equilibrium']:
                 continue # Already set
             else:
@@ -49,9 +49,9 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
     return solution
 
 def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
-                  method : str = 'BDF', 
-                  atol : float = 1e-12,
-                  rtol : float = 1e-12,):
+                  method : str = 'Radau', 
+                  atol : float = 0.0,
+                  rtol : float = 1e-3,):
 
 
     # Initial conditions
@@ -59,6 +59,5 @@ def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
     #solving the Boltzmann equation
     sol = solve_ivp(dYdx, [x0,xf], Y0, args=(model,), atol = atol, 
                     rtol = rtol, method=method, t_eval=xvals)
-    # sol= odeint(dYdx, Y0, xvals, args=(model,), tfirst=True)
 
     return sol

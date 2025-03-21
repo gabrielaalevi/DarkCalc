@@ -64,7 +64,7 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
                 continue
             sigma = process.sigmaV(x)
             if sigma <= 0.0:
-                continue
+                sigma = 0.0
             initialPDGs = process.initialPDGs
             finalPDGs = process.finalPDGs
             # The impact on the component i is proportional
