@@ -106,10 +106,14 @@ class ColorizedStreamHandler(logging.StreamHandler):
         return msg
 
 def getLogger ():
-    FORMAT = '%(levelname)s in %(module)s.%(funcName)s() in' \
-       ' %(lineno)s: %(message)s'
-    logging.basicConfig(format=FORMAT)
-    formatter = logging.Formatter( FORMAT )
+    FORMAT = '{levelname} in {module}.{funcName} : {message} at {asctime}'
+    logging.basicConfig(format=FORMAT,
+                        level=logging.INFO,
+                        # datefmt='%Y-%m-%d %H:%M:%S',
+                        style="{")
+    formatter = logging.Formatter( FORMAT , 
+                                  style="{", 
+                                  datefmt='%H:%M:%S',)
     ch = ColorizedStreamHandler()
     ch.setFormatter ( formatter )
     logger = logging.getLogger("boltz")
