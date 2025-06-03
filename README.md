@@ -86,8 +86,6 @@ Some models have different notations on how to call each particle. In case there
 
 For example, the left-handed scalar partner of the bottom quark is called b1 in the Monte Carlo Particle Numbering Scheme, and its PDG is 1000005. Looking at the param_card produced by the DMSimp_t framework, we find:
 
-![image](https://github.com/user-attachments/assets/b52e80a0-ee2f-49ea-a226-32ac819f2970)
-
 Hence, the name of this particle in this model is ys3qd3. If we wanted to calculate the decay width for this particle, we would run:
 
 ```
