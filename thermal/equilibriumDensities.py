@@ -1,7 +1,7 @@
 #This module has auxiliary functions
 from scipy.special import kn, zeta
 from numpy import pi,sqrt,exp
-m_planck = 2.4*10**(18) #reduced planck mass, in GeV
+m_planck = 1.2209 * 10**(19) #reduced planck mass, in GeV
 
 def gstar(T: float) -> float:
     """
@@ -12,11 +12,25 @@ def gstar(T: float) -> float:
 
     """
     
-    if T >= 1:
+    if T >= 46:
         g_star = 106.75
-    elif T >= 0.04:
-        g_star = 61
-    elif T >= 0.0005:
+    elif T>= 33:
+        g_star = 90
+    elif T>= 6.7:
+        g_star = 85
+    elif T>= 2:
+        g_star = 80
+    elif T>= 1:
+        g_star = 75
+    elif T >= 0.7:
+        g_star = 70
+    elif T>= 0.4:
+        g_star = 65
+    elif T>= 0.2:
+        g_star = 60
+    elif T >= 0.09:
+        g_star = 17
+    elif T >= 0.017:
         g_star = 10
     else:
         g_star = 3
