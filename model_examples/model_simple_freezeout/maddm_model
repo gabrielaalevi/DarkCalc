@@ -1,6 +1,0 @@
-import model DMSimp_t
-define darkmatter xd
-generate relic_density
-output model1
-launch model1
-set mxd 1300

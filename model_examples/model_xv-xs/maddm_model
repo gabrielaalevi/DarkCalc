@@ -1,9 +1,0 @@
-import model DMSimp_t
-define darkmatter xv
-define coannihilator xs
-generate relic_density
-output modelxv-xs
-launch modelxv-xs
-set mxv 600
-set mxs 620
-set relic_canonical False

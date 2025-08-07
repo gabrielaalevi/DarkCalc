@@ -1,9 +1,0 @@
-import model DMSimp_t-S3D_3rd
-define darkmatter xd
-define coannihilator b1
-generate relic_density
-output modelxdb1_3rd
-launch modelxdb1_3rd
-set mxd 500
-set mys3qu3 520
-set lams3d3x3 1e-3
