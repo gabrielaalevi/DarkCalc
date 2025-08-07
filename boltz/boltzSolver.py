@@ -37,6 +37,8 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
                 y0[comp.ID] = comp_y0
             elif comp_y0.lower() in ['eq', 'equilibrium']:
                 continue # Already set
+            elif comp_y0.lower() == 'zero':
+                y0[comp.ID] = 1e-20
             else:
                 logger.error(f"Could not set initial condition to {comp_y0}")
                 return False
