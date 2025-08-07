@@ -40,9 +40,11 @@ def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike
             for j in sorted(daughter_ids):
                 Yprod = np.prod([Y[daughter.ID]/daughter.Yeq(T) for daughter in daughters])
                 Dij_alpha = gamma_i*comp_i.totalwidth*br*(Y_i - Yeq_i*Yprod)/s
-                dec_terms[i]['decay'] -= Dij_alpha
-                g_j = daughter_ids.count(j)
-                dec_terms[j]['injection'] += g_j*Dij_alpha
+                is_nan = np.isnan(Dij_alpha)
+                if is_nan == False:
+                    dec_terms[i]['decay'] -= Dij_alpha
+                    g_j = daughter_ids.count(j)
+                    dec_terms[j]['injection'] += g_j*Dij_alpha
                 
     return dec_terms
 
@@ -51,7 +53,7 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     T = mDM/x
-            
+    s = eqDensitities.S(T) #entropy density at temperature T
 
     coll_terms = [{} for _ in compDict.values()]
     for comp_i in compDict.values():        
@@ -83,9 +85,17 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
                 r_eq = r_eq/(c.Yeq(T)*d.Yeq(T))
             # Multiply sigma by Yeq_i*Yeq_j for convenience
             # then we just need to multiply by ratios
-            Cabcd = n_i*sigma*(Y[a.ID]*Y[b.ID] - Y[c.ID]*Y[d.ID]*r_eq)
+            if (a_pdg <30 or b_pdg <30) and (c_pdg < 30 or d_pdg < 30):
+            #for conversion reactions
+                sigma = sigma*(d.Yeq(T))/(a.Yeq(T))
+                Cabcd = (n_i/s)*sigma*(Y[a.ID]*Y[b.ID] - Y[c.ID]*Y[d.ID]*r_eq)
+            else:
+            #for annihilation reactions
+                Cabcd = n_i*sigma*(Y[a.ID]*Y[b.ID] - Y[c.ID]*Y[d.ID]*r_eq)
             coll_terms[i].setdefault(process.name,0.0)
-            coll_terms[i][process.name] += Cabcd
+            is_nan = np.isnan(Cabcd)
+            if is_nan == False:
+                coll_terms[i][process.name] += Cabcd
 
     return coll_terms
 
@@ -130,5 +140,6 @@ def dYdx(x: float, Y : List[float], model : ModelData):
         dY[i] = (dec_term + inj_term + coll_term)
     dYStr = ','.join([f"{dy:1.2e}" for dy in dY])
     YStr = ','.join([f"{y:1.2e}" for y in Y])
+    print(YStr)
     logger.debug(f'Result: x = {x:1.2e}, Y = {YStr}, dY = {dYStr}\n')
     return dY
