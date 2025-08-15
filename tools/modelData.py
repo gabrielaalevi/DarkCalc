@@ -155,8 +155,8 @@ class ModelData(object):
     and collision processes
     """
 
-    def __init__(self, dmPDG : Union[int,str],  
-                 bsmPDGList : Union[List[int],List[str]], 
+    def __init__(self, dmPDG : int,  
+                 bsmPDGList : List[int], 
                  bannerFile : Optional[str] = None):
         """
         :param bsmPDGList: Used to selected the BSM particles to include in the Boltzmann equations. 

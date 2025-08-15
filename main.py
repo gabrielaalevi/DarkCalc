@@ -12,6 +12,7 @@ from tools.modelData import ModelData
 from boltz.boltzSolver import runSolver
 from boltz.boltzmannEq import computeCollisionTerms,computeDecayTerms
 import thermal.equilibriumDensities as eqDensitities
+from scipy.integrate import OdeSolution
 import multiprocessing
 import time,datetime
 import numpy as np
@@ -70,7 +71,7 @@ def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
 
     return True
 
-def runSolution(parser : dict) -> bool:
+def runSolution(parser : dict) -> OdeSolution:
     """
     Run MadDM, load the model and solve the Boltzmann equations
 
@@ -140,7 +141,7 @@ def main(parfile,verbose):
 
     now = datetime.datetime.now()
     children = []
-    for irun,newParser in enumerate(parserList):
+    for _,newParser in enumerate(parserList):
         # Create temporary folder names if running in parallel
         parserDict = newParser.toDict(raw=False)
         logger.debug('submitting with pars:\n %s \n' %parserDict)

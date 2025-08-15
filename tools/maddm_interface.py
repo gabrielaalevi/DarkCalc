@@ -23,9 +23,8 @@ def runMadDM(parser : dict) -> str:
     if not os.path.isdir(modelDir):
         # Check for model restriction in the name
         mDir = modelDir.rsplit('-',1)[0]
-        if not os.path.isdir(mDir):
-            logger.error(f'Model folder {modelDir} (or {mDir}) not found')
-            return False
+        if not os.path.isdir(mDir):            
+            raise ValueError(f'Model folder {modelDir} (or {mDir}) not found')
 
     dm = parser['Model']['darkmatter']
     if 'bsmParticles' in parser['Model']:
@@ -64,8 +63,7 @@ def runMadDM(parser : dict) -> str:
     mg5Folder = parser['Options']['MadGraphPath']
     mg5Folder = os.path.abspath(mg5Folder)        
     if not os.path.isfile(os.path.join(mg5Folder,'bin','maddm.py')):
-        logger.error(f'Executable maddm.py not found in {mg5Folder}')
-        return False
+        raise ValueError(f'Executable maddm.py not found in {mg5Folder}')
     # Comput widths
     with open(cFilePath, 'r') as f: 
         logger.debug(f'Running MadDM with commands:\n {f.read()} \n')
@@ -85,8 +83,7 @@ def runMadDM(parser : dict) -> str:
     # Check if cross-sections were generated and saved to taacs.csv
     sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
     if not os.path.isfile(sigmaVFile):
-        logger.error(f"Error computing sigmaV with MadDM ({sigmaVFile} not found)")
-        return None
+        raise ValueError(f"Error computing sigmaV with MadDM ({sigmaVFile} not found)")
     else:
         return mergeOutput(outputFolder)
 
@@ -99,12 +96,10 @@ def mergeOutput(outputFolder : str) -> str:
 
     paramCard = os.path.join(outputFolder,'Cards','param_card.dat')
     if  not os.path.isfile(paramCard):
-        logger.error(f"Param card ({paramCard} not found)")
-        return None
+        raise ValueError(f"Param card ({paramCard} not found)")
     sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
     if not os.path.isfile(sigmaVFile):
-        logger.error(f"SigmaV file ({sigmaVFile} not found)")
-        return None
+        raise ValueError(f"SigmaV file ({sigmaVFile} not found)")
 
     with open(paramCard,'r') as f:
         paramCard = f.read()

@@ -1,11 +1,12 @@
 
-from scipy.integrate import solve_ivp,odeint
+from scipy.integrate import solve_ivp
 from boltz.boltzmannEq import dYdx
-from typing import List
 from tools.modelData import ModelData
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy.integrate import OdeSolution
 from tools.logger import logger
+from typing import Union,List
 
 
 def runSolver(parser : dict, model : ModelData) -> OdeSolution:
@@ -40,8 +41,7 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
             elif comp_y0.lower() == 'zero':
                 y0[comp.ID] = 1e-20
             else:
-                logger.error(f"Could not set initial condition to {comp_y0}")
-                return False
+                raise ValueError(f"Could not set initial condition to {comp_y0}")
         
     xvals = np.geomspace(x0,xf,nsteps)
 
@@ -50,7 +50,8 @@ def runSolver(parser : dict, model : ModelData) -> OdeSolution:
     
     return solution
 
-def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
+def solveBoltzEqs(xvals : List, Y0 : Union[List,ArrayLike], 
+                  model : ModelData,
                   method : str = 'Radau', 
                   atol : float = 0.0,
                   rtol : float = 1e-3,):

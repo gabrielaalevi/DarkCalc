@@ -4,10 +4,9 @@ import numpy as np
 import thermal.equilibriumDensities as eqDensitities
 from tools.modelData import ModelData
 from typing import List, Dict
-from numpy.typing import ArrayLike
 from tools.logger import logger
 
-def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> ArrayLike:
+def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> List[Dict[str,float]]:
     
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
