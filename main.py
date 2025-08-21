@@ -12,7 +12,6 @@ from tools.modelData import ModelData
 from boltz.boltzSolver import runSolver
 from boltz.boltzmannEq import computeCollisionTerms,computeDecayTerms
 import thermal.equilibriumDensities as eqDensitities
-from scipy.integrate import OdeSolution
 import multiprocessing
 import time,datetime
 import numpy as np
@@ -20,24 +19,25 @@ import numpy as np
 
 
 
-def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
+def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> bool:
 
     pars = parser['SolverParameters']
     extended = bool(pars['extendedOutput'])
     compDict = model.componentsDict
     labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID) if comp.ID != 0]
-    x_sol = solution.t
-    y_sol = solution.y
     headerList = ['x'] + [f'Y({label})' for label in labels] 
     data = np.array(list(zip(x_sol,*y_sol[1:])))
     Ytot = sum(data[-1][1:])
     for i,label in enumerate(labels):
         Y_i = data[-1][i+1]
-        om_i = 0.12*Y_i/(6.8e-13)
-        logger.info(f"Omega*h^2({label}) = {om_i:1.3e}")
+        s = 2889.2 #current entropy density
+        rho_c = 1.05 * 10**(-5) #critical density
+        mDM = compDict[model.dmPDG].mass
+        om_i = ((s * mDM * Y_i)/rho_c)
+        logger.info(f"Omega*h^2({label}) = {om_i:1.4e}")
         
     Ytot = sum(data[-1][1:])
-    omh2 = 0.12*Ytot/(6.8e-13)
+    omh2 = ((s * mDM * Ytot)/rho_c)
     logger.info(f'\n\nOmega*h^2 = {omh2:1.4g}\n')
 
     if extended:
@@ -71,7 +71,7 @@ def saveSolutions(parser : dict, solution, model : ModelData) -> bool:
 
     return True
 
-def runSolution(parser : dict) -> OdeSolution:
+def runSolution(parser : dict) -> bool:
     """
     Run MadDM, load the model and solve the Boltzmann equations
 
@@ -96,12 +96,12 @@ def runSolution(parser : dict) -> OdeSolution:
     logger.info("Model loaded")
     t0 = time.time()
     logger.info("Solving Boltzmann equations")
-    sol = runSolver(parser,model)
+    sol, x_sol, y_sol = runSolver(parser,model)
     if sol.success:
         dt = (time.time()-t0)
         logger.info(f"Solved Boltzmann equations in {dt:1.1f} s")
         logger.info("Saving solutions")
-        saveSolutions(parser,sol,model)
+        saveSolutions(parser,sol, x_sol, y_sol,model)
     else:
         logger.error(f"Error solving Boltzmann equations:\n {sol.message}\n")
     return sol
@@ -141,7 +141,7 @@ def main(parfile,verbose):
 
     now = datetime.datetime.now()
     children = []
-    for _,newParser in enumerate(parserList):
+    for irun,newParser in enumerate(parserList):
         # Create temporary folder names if running in parallel
         parserDict = newParser.toDict(raw=False)
         logger.debug('submitting with pars:\n %s \n' %parserDict)
