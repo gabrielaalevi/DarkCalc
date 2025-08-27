@@ -12,8 +12,16 @@ def gstar(T: float) -> float:
 
     """
     
-    if T >= 34:
+    if T >= 59:
         g_star = 106.75
+    elif T>= 49:
+        g_star = 103
+    elif T >= 40:
+        g_star = 102
+    elif T>= 34:
+        g_star = 100
+    elif T>= 23:
+        g_star = 95
     elif T>= 14:
         g_star = 90
     elif T>= 4.43:
