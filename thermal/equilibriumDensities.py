@@ -89,7 +89,7 @@ def Neq(T: float, m: float, g: int) -> float:
         coeffs = [1,15./8.,105./128.,-315./1024.,10395./32768.]
         neq = (m**3*exp(-xm)/(xm**(3/2)))*(1/(2*sqrt(2)*pi**(3/2)))
         neq = neq*sum([c/xm**i for i,c in enumerate(coeffs)])
-    elif xm > (2./3.): #semi-relativistic regime
+    elif xm > (0.25): #semi-relativistic regime
         neq = m**3*(1/(2*pi**2))*kn(2, xm)/xm
     else: #relativistic regime
         neq = (zeta(3)/pi**2)*T**3 # bosons
