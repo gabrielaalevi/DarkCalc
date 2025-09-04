@@ -79,3 +79,10 @@ where 'condition' can be *thermal* (for thermal equilibrium) or a numeric value 
   
 - `extendedOutput` (True/False): if True, DarkCalc saves the contribution from each collision term, for each interaction, in addition to the solution of the Boltzmann equations.
   
+## Execution and Output
+
+To execute the code, the user must run in the command line:
+
+```DarkCalc$ python3 ./main.py```
+
+This command will prompt the execution of DarkCalc. The output file will be saved by name `outputFile`, in the format chosen by the user in this variable, inside the root `DarkCalc` directory. To plot the solution, DarkCalc comes with a Jupyter notebook named `plot.ipynb`, inside the `examples` folder.
