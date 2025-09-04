@@ -23,33 +23,33 @@ There are two essential inputs for DarkCalc: the UFO model files and the input f
 
 The UFO model must be pre-downloaded by the user, from the FeynRules Model database. DarkCalc comes with a `models` directory to store such files, but the user can personalized the path to the UFO model in the input file, allowing for storage of models in arbitrary locations. By default, DarkCalc comes with the `DMSimp-t` model pre-installed.
 
-The physical parameters and execution settings are specified via the `input\_parameters.ini` file, within the root directory `DarkCalc`. A default example file is distributed with DarkCalc, to serve as a template. The available options in the input file are:
+The physical parameters and execution settings are specified via the `input_parameters.ini` file, within the root directory `DarkCalc`. A default example file is distributed with DarkCalc, to serve as a template. The available options in the input file are:
 
 *Options*: definition of paths, and options for turning on and off some DarkCalc features.
 
 - `outputFolder` (path): defines the directory in which DarkCalc will store all output files related to the current run, excluding the input file itself and the solution file.
-- 
+  
 - `MadGraphPath` (path): specifies the installation path for MadGraph. If the user executed the installer script, it should be set to \texttt{MG5}.
-- 
+  
 - `skipMadDM` (True/False): if False, DarkCalc will execute MadDM to compute thermally-averaged cross sections and decay widths. If True, the code does not execute MadDM, and instead searches for cross section and decay width values inside the `outputFolder`. This option is useful for re-running only the Boltzmann equation integration, provided that particle masses and couplings remain unchanged.
-- 
+  
 - `addConversion` (True/False): controls the inclusion of conversion processes in the Boltzmann equation. if True, such interactions are included in the solution. If False, these reactions are omitted.
-- 
+  
 *Model*: definition of the model characteristics, such as the UFO model and the particles present in the simulation.
 
 - `modelDir` (path): path to the UFO model directory to be used in the simulation.
-- 
+  
 - `darkmatter` (string): label of the Dark Matter particle.
-- 
+  
 - `bsmParticles` (list of strings): list of all Beyond-the-Standard-Model particles present in the model, identified by labels.
-- 
+  
 - `computeWidths` (list of strings): list of BSM particles whose decay width should be computed.
-- 
+  
 *SetParameters*: specification of the model parameters, such as masses and coupling values.
 
 - mass parameters: particle masses are set via lines of the form
 
-`m`(label) = (value in GeV)
+m(label) = (value in GeV)
 
 where (label) identifies the particle.
 
