@@ -139,6 +139,5 @@ def dYdx(x: float, Y : List[float], model : ModelData):
         dY[i] = (dec_term + inj_term + coll_term)
     dYStr = ','.join([f"{dy:1.2e}" for dy in dY])
     YStr = ','.join([f"{y:1.2e}" for y in Y])
-    print(YStr)
     logger.debug(f'Result: x = {x:1.2e}, Y = {YStr}, dY = {dYStr}\n')
     return dY
