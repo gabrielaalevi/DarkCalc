@@ -43,15 +43,15 @@ The physical parameters and execution settings are specified via the `input_para
   
 - `bsmParticles` (list of strings): list of all Beyond-the-Standard-Model particles present in the model, identified by labels.
   
-- `computeWidths` (list of strings): list of BSM particles whose decay width should be computed.
+- `computeWidths` (list of integers): list of BSM particles whose decay width should be computed, specified by their PDG codes.
   
 *SetParameters*: specification of the model parameters, such as masses and coupling values.
 
 - mass parameters: particle masses are set via lines of the form
 
-m(label) = (value in GeV)
+mass (PDG) = (value in GeV)
 
-where (label) identifies the particle.
+where (PDG) identifies the particle.
 
 - other parameters: any additional model-specific parameters (such as coupling strengths), are defined by:
   
