@@ -4,6 +4,7 @@ from boltz.boltzmannEq import dYdx
 from typing import List
 from tools.modelData import ModelData
 import numpy as np
+from numpy.typing import NDArray
 from scipy.integrate import OdeSolution
 from tools.logger import logger
 
@@ -50,7 +51,7 @@ def runSolver(parser : dict, model : ModelData):
     
     return solution
 
-def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
+def solveBoltzEqs(xvals : NDArray, Y0 : NDArray, model : ModelData,
                   method : str = 'Radau', 
                   atol : float = 1e-10,
                   rtol : float = 1e-10,):
@@ -68,19 +69,21 @@ def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
 
 
     x = np.array([])
-    y = np.array([])
+    y = np.array([[] for _ in Y0])
     sol = None
+    y0=Y0[:]
     for xf_val in xfList:
-        sol = solve_ivp(dYdx, [x0,xf_val], Y0, args=(model,), 
-                        atol = 10**(-12), rtol = 10**(-12), 
-                        method=method, max_step = 0.08,
+        sol = solve_ivp(dYdx, [x0,xf_val], y0=y0, args=(model,), 
+                        atol = atol, rtol = rtol, 
+                        method=method, max_step = 0.1,
                         t_eval=np.geomspace(x0,xf_val,n_eval))
-        if not sol.succes:
+        if not sol.success:
             return sol, x, y
         
         y = np.hstack((y,sol.y[:]))
         x = np.hstack((x,sol.t[:]))
         x0 = sol.t[-1]
+        y0 = sol.y[:,-1]
     
     return sol, x, y
     
