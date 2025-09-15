@@ -24,18 +24,22 @@ def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> b
     pars = parser['SolverParameters']
     extended = bool(pars['extendedOutput'])
     compDict = model.componentsDict
-    labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID) if comp.ID != 0]
+    labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID)
+               if comp.ID != 0]
     headerList = ['x'] + [f'Y({label})' for label in labels] 
     data = np.array(list(zip(x_sol,*y_sol[1:])))
     Ytot = sum(data[-1][1:])
-    for i,label in enumerate(labels):
-        Y_i = data[-1][i+1]
-        s = 2889.2 #current entropy density
-        rho_c = 1.05 * 10**(-5) #critical density
-        mDM = compDict[model.dmPDG].mass
-        om_i = ((s * mDM * Y_i)/rho_c)
-        logger.info(f"Omega*h^2({label}) = {om_i:1.4e}")
+
+    s = 2889.2 #current entropy density
+    rho_c = 1.05 * 10**(-5) #critical density    
+    mDM = compDict[model.dmPDG].mass # Dark matter mass
+
+    Y_f = data[-1,1:] # final yield
+    om_f = ((s * mDM * Y_f)/rho_c)
+    for i,label in enumerate(labels):        
+        logger.info(f"Omega*h^2({label}) = {om_f[i]:1.4e}")
         
+    
     Ytot = sum(data[-1][1:])
     omh2 = ((s * mDM * Ytot)/rho_c)
     logger.info(f'\n\nOmega*h^2 = {omh2:1.4g}\n')
@@ -66,8 +70,10 @@ def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> b
         data = np.hstack((data,Cij_vec))
         
     header = ','.join(headerList)
-    outFile = os.path.abspath(pars['outputFile'])
-    np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')  
+    outFolder = os.path.abspath(parser['Options']['outputFolder'])
+    outFile = os.path.join(outFolder,pars['outputFile'])
+    np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')
+    logger.info(f'Boltzmann equation solutions saved to {outFile}') 
 
     return True
 
@@ -85,17 +91,17 @@ def runSolution(parser : dict) -> bool:
     else:
         skipMadDM = False
     if not skipMadDM:
-        logger.info("Running MadDM")
-        outputFile = runMadDM(parser)
+        logger.info("Computing thermally averaged cross-sections with MadDM")
+        bannerFile = runMadDM(parser)
         logger.info("Finished MadDM run")
     else:
         outputFolder = os.path.abspath(parser['Options']['outputFolder'])
-        outputFile = os.path.join(outputFolder,'darkcalc_banner.txt')
+        bannerFile = os.path.join(outputFolder,'darkcalc_banner.txt')
     logger.info("Loading model")
-    model = ModelData.loadModel(parser, outputFile)
+    model = ModelData.loadModel(parser, bannerFile)
     logger.info("Model loaded")
     t0 = time.time()
-    logger.info("Solving Boltzmann equations")
+    logger.info(f"Solving Boltzmann equations using {bannerFile}")
     sol, x_sol, y_sol = runSolver(parser,model)
     if sol.success:
         dt = (time.time()-t0)
@@ -141,7 +147,7 @@ def main(parfile,verbose):
 
     now = datetime.datetime.now()
     children = []
-    for irun,newParser in enumerate(parserList):
+    for _,newParser in enumerate(parserList):
         # Create temporary folder names if running in parallel
         parserDict = newParser.toDict(raw=False)
         logger.debug('submitting with pars:\n %s \n' %parserDict)

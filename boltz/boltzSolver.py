@@ -8,7 +8,7 @@ from scipy.integrate import OdeSolution
 from tools.logger import logger
 
 
-def runSolver(parser : dict, model : ModelData) -> OdeSolution:
+def runSolver(parser : dict, model : ModelData):
     
     logger.debug(f'Solving Boltzmann equations for {model}')
 
@@ -62,35 +62,25 @@ def solveBoltzEqs(xvals : List[float], Y0 : List[float], model : ModelData,
     n_eval = int(nsteps/4)
     #solving the Boltzmann equation
 
-    sol = solve_ivp(dYdx, [x0,7], Y0, args=(model,), atol = 10**(-12), rtol = 10**(-12), method=method, max_step = 0.08,
-                 t_eval=np.geomspace(x0,7,n_eval))
-    y = sol.y[:]
-    x = sol.t[:]
-    if sol.success:
-        sol2 = solve_ivp(dYdx, [sol.t[-1],12], sol.y[:,-1], args=(model,), atol = 10**(-10), rtol = 10**(-10), method=method, max_step = 0.08,
-                 t_eval=np.geomspace(sol.t[-1],12,n_eval))
-        y_sol = sol2.y[:]
-        x_sol = sol2.t[:]
-        y = np.hstack((y,y_sol))
-        x = np.hstack((x,x_sol))
-        if sol2.success:
-            sol3 = solve_ivp(dYdx, [sol2.t[-1],110], sol2.y[:,-1], args=(model,), atol = 10**(-13), rtol = 10**(-13), method=method, max_step = 0.04,
-                 t_eval=np.geomspace(sol2.t[-1],110,n_eval))
-            y_sol = sol3.y[:]
-            x_sol = sol3.t[:]
-            y = np.hstack((y,y_sol))
-            x = np.hstack((x,x_sol))
-            if sol3.success:
-                sol4 = solve_ivp(dYdx, [sol3.t[-1],xf], sol3.y[:,-1], args=(model,), atol = atol, rtol = rtol, method=method, max_step = 0.08,
-                        t_eval=np.geomspace(sol3.t[-1],xf,n_eval))
-                y_sol = sol4.y[:]
-                x_sol = sol4.t[:]
-                y = np.hstack((y,y_sol))
-                x = np.hstack((x,x_sol))
-                return sol4, x, y
-            else:
-                return sol3, x, y
-        else:
-            return sol2, x, y
-    else:
-        return sol, x, y
+    # It is usually convenient to break the solution into smaller intervals:
+    xfList = [7.,12.,110.,xf]
+    xfList = [x for x in xfList[:] if x <= xf]
+
+
+    x = np.array([])
+    y = np.array([])
+    sol = None
+    for xf_val in xfList:
+        sol = solve_ivp(dYdx, [x0,xf_val], Y0, args=(model,), 
+                        atol = 10**(-12), rtol = 10**(-12), 
+                        method=method, max_step = 0.08,
+                        t_eval=np.geomspace(x0,xf_val,n_eval))
+        if not sol.succes:
+            return sol, x, y
+        
+        y = np.hstack((y,sol.y[:]))
+        x = np.hstack((x,sol.t[:]))
+        x0 = sol.t[-1]
+    
+    return sol, x, y
+    

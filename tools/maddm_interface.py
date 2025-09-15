@@ -17,8 +17,9 @@ def runMadDM(parser : dict) -> str:
         
     #Get run folder:    
     outputFolder = os.path.abspath(parser['Options']['outputFolder'])
-    if not os.path.isdir(outputFolder):
-        os.makedirs(outputFolder)    
+    maddmFolder = os.path.join(outputFolder,'maddm')
+    if not os.path.isdir(maddmFolder):
+        os.makedirs(maddmFolder)    
     
     modelDir = os.path.abspath(parser['Model']['modelDir'])
     if not os.path.isdir(modelDir):
@@ -26,7 +27,7 @@ def runMadDM(parser : dict) -> str:
         mDir = modelDir.rsplit('-',1)[0]
         if not os.path.isdir(mDir):
             logger.error(f'Model folder {modelDir} (or {mDir}) not found')
-            return False
+            raise ValueError()
 
     dm = parser['Model']['darkmatter']
     if 'bsmParticles' in parser['Model']:
@@ -42,7 +43,9 @@ def runMadDM(parser : dict) -> str:
         addConversion = False
 
     #Generate commands file:       
-    commandsFile,cFilePath = tempfile.mkstemp(suffix='.txt', prefix='maddm_commands_', dir=outputFolder)    
+    commandsFile,cFilePath = tempfile.mkstemp(suffix='.txt', 
+                                              prefix='maddm_commands_', 
+                                              dir=maddmFolder)    
     os.close(commandsFile)
     commandsFileF = open(cFilePath,'w')
     commandsFileF.write(f'import model {modelDir}\n')
@@ -50,7 +53,7 @@ def runMadDM(parser : dict) -> str:
     for p in bsmList:
         commandsFileF.write(f'define coannihilator {p}\n')
     commandsFileF.write('generate relic_density\n')
-    commandsFileF.write(f'output {outputFolder}\n')
+    commandsFileF.write(f'output {maddmFolder}\n')
     commandsFileF.write('launch\n')
     if 'paramCard' in parser['Model']:
         paramCard = os.path.abspath(parser['Model']['paramCard'])
@@ -71,7 +74,7 @@ def runMadDM(parser : dict) -> str:
     mg5Folder = os.path.abspath(mg5Folder)        
     if not os.path.isfile(os.path.join(mg5Folder,'bin','maddm.py')):
         logger.error(f'Executable maddm.py not found in {mg5Folder}')
-        return False
+        raise FileNotFoundError()
     # Comput widths
     with open(cFilePath, 'r') as f: 
         logger.debug(f'Running MadDM with commands:\n {f.read()} \n')
@@ -89,28 +92,28 @@ def runMadDM(parser : dict) -> str:
         os.remove(cFilePath)
 
     # Check if cross-sections were generated and saved to taacs.csv
-    sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
+    sigmaVFile = os.path.join(maddmFolder,'output','taacs.csv')
     if not os.path.isfile(sigmaVFile):
         logger.error(f"Error computing sigmaV with MadDM ({sigmaVFile} not found)")
-        return None
+        raise FileNotFoundError()
     else:
-        return mergeOutput(outputFolder, addConversion)
+        return mergeOutput(outputFolder, maddmFolder, addConversion)
 
-def mergeOutput(outputFolder : str, addConversion: bool) -> str:
+def mergeOutput(outputFolder : str, maddmFolder : str, addConversion: bool) -> str:
     """
     Combines the param_card and the sigmaVFile into a single file,
     similar to the MadGraph banner.
     Returns the new file name
     """
 
-    paramCard = os.path.join(outputFolder,'Cards','param_card.dat')
+    paramCard = os.path.join(maddmFolder,'Cards','param_card.dat')
     if  not os.path.isfile(paramCard):
         logger.error(f"Param card ({paramCard} not found)")
-        return None
-    sigmaVFile = os.path.join(outputFolder,'output','taacs.csv')
+        raise FileNotFoundError()
+    sigmaVFile = os.path.join(maddmFolder,'output','taacs.csv')
     if not os.path.isfile(sigmaVFile):
         logger.error(f"SigmaV file ({sigmaVFile} not found)")
-        return None
+        raise FileNotFoundError()
 
     with open(paramCard,'r') as f:
         paramCard = f.read()
