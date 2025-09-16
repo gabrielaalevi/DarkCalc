@@ -1,8 +1,8 @@
 #module: Components
 #this module sets the main characteristics for all the involved particles
 
-from thermal.equilibriumDensities import Neq, Yeq, gstar
-from typing import List, Dict, Optional
+from thermal.equilibriumDensities import Neq, Yeq, gstar, Req
+from typing import List, Dict, Optional, Self
 from scipy.interpolate import interp1d
 from scipy.special import kn
 from tools.logger import logger
@@ -78,7 +78,21 @@ class Component(object):
         """
         yeq = Yeq(T, self.mass, self.g(T))
         
-        return yeq    
+        return yeq
+
+    def Req(self, other : Self, T: float) -> float:
+        """
+        Returns the ratio of equilibrium yields (Yeq(self)/Yeq(other)).
+        For highly Boltzmann suppressed yields, it is can be more stable
+        than computing each yield separately.
+        """
+
+        m1 = self.mass
+        m2 = other.mass
+        g1 = self.g(T)
+        g2 = other.g(T)
+        return Req(T,m1,g1,m2,g2)
+            
    
     def gammaInv(self,T: float) -> float:
         """

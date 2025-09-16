@@ -92,7 +92,7 @@ def Neq_n(n: int, T: float, m: float, g: int) -> float:
         fac = fac*(m**3*exp(-xm*(1+n))/(xm**(3/2)))*(1/(2*sqrt(2)*pi**(3/2)))
         terms = np.array([(xm**i)*(1.0+n)**(3./2.+i) for i in range(len(coeffs))])
         neq_n = fac*sum(coeffs/terms)
-    elif xm > (0.15): #semi-relativistic regime
+    elif xm > 0.15: #semi-relativistic regime
         neq_n = fac*m**3*(1/(2*(1+n)*pi**2))*kn(2, xm*(1+n))/xm
     else: #relativistic regime
         if n == 0:
@@ -139,6 +139,63 @@ def Yeq(T: float, m: float, g: int) -> float:
     neq = Neq(T,m,g)
     yeq = neq/s
     return yeq
+
+def Req(T: float, m1: float, g1: int, m2 : float, g2: int) -> float:
+    """
+    Calculates the ratio of equilibrium number densities at a temperature T (in GeV), i.e. Neq(1)/Neq(2) 
+    using Maxwell-Boltzmann statitics.
+
+    :param T: thermal bath temperature (in GeV)
+    :param m: Particle mass
+    :param g: Particle's degrees of freedom. Use g < 0 for bosons and g > 0 for fermions
+
+    """
+
+    xm1 = m1/T
+    xm2 = m2/T
+    # If there is no strong Boltzmann suppression, directly compute the ratio
+    if max(xm1,xm2) < 10.0:
+        return Neq(T,m1,g1)/Neq(T,m2,g2)
+
+    coeffs = np.array([1,15./8.,105./128.,-315./1024.,10395./32768.])
+    if xm1 == xm2:
+        mdiff_fac = 1.0
+    else:
+        dm = (xm1-xm2)
+        if xm1 == 0.0:
+            rm = 1/xm2**(3/2)
+        elif xm2 == 0.0:
+            rm = xm1**(3/2)
+        else:
+            rm = (xm1/xm2)**(3/2)
+        mdiff_fac = rm*np.exp(-dm)
+
+    xi = []
+    for xm,g in zip([xm1,xm2],[g1,g2]):
+        if xm > 10: #non-relativistic regime         
+            fac = (1/(2*sqrt(2)*pi**(3/2)))       
+            terms = np.array([xm**i for i in range(len(coeffs))])
+            xi.append(fac*sum(coeffs/terms))
+        elif xm > 0.15: #semi-relativistic regime
+            fac = 1/(2*pi**2)
+            xi.append(fac*np.sqrt(xm)*np.exp(xm)*kn(2, xm))
+        else: #relativistic regime
+            if g > 0:
+                xi.append(zeta(3)/pi**2)
+            else:
+                xi.append((3/4)*zeta(3)/pi**2)
+    
+    if xi[1] <= 0.0:
+        req = np.nan
+    elif xi[0] <= 0.0:
+        req = 0.0
+    else:
+        req = (xi[0]/xi[1])*mdiff_fac*abs(g1)/abs(g2)
+
+    if np.isinf(req) or np.isnan(req):
+        raise ValueError(f"Trying to compute ratios of number densities at T = {T:1.2e} lead to infinities. Try to increase the final temperature.")
+    
+    return req
 
 
 def dSdT(T: float) -> float: 

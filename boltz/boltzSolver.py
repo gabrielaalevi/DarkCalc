@@ -74,6 +74,7 @@ def solveBoltzEqs(xvals : NDArray, Y0 : NDArray,
     sol = None
     y0=Y0[:]
     for xf_val in xfList:
+        logger.debug(f'Solving in the interval {x0} to {xf_val}')
         sol = solve_ivp(dYdx, [x0,xf_val], y0=y0, args=(model,), 
                         atol = atol, rtol = rtol, 
                         method=method, max_step = 0.1,

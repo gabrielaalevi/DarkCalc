@@ -37,8 +37,11 @@ def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> List[Dict
             daughters = [compDict[pdg] for pdg in daughter_pdgs]             
             daughter_ids = [daughter.ID for daughter in daughters]
             for j in sorted(daughter_ids):
-                Yprod = np.prod([Y[daughter.ID]/daughter.Yeq(T) for daughter in daughters])
-                Dij_alpha = gamma_i*comp_i.totalwidth*br*(Y_i - Yeq_i*Yprod)/s
+                if Yeq_i > 0.0:
+                    Yprod = np.prod([Y[daughter.ID]*comp_i.Req(daughter,T) for daughter in daughters])
+                else:
+                    Yprod = 0.0
+                Dij_alpha = gamma_i*comp_i.totalwidth*br*(Y_i - Yprod)/s
                 is_nan = np.isnan(Dij_alpha)
                 if is_nan == False:
                     dec_terms[i]['decay'] -= Dij_alpha
@@ -79,9 +82,7 @@ def computeCollisionTerms(x: float, Y : List[float], model : ModelData) -> List[
             b = compDict[b_pdg]
             c = compDict[c_pdg]
             d = compDict[d_pdg]    
-            r_eq = a.Yeq(T)*b.Yeq(T)
-            if r_eq > 0.0:
-                r_eq = r_eq/(c.Yeq(T)*d.Yeq(T))
+            r_eq = a.Req(c,T)*b.Req(d,T)
             # Multiply sigma by Yeq_i*Yeq_j for convenience
             # then we just need to multiply by ratios
             if (a_pdg <30 or b_pdg <30) and (c_pdg < 30 or d_pdg < 30):
