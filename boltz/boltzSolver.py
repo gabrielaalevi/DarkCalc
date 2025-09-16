@@ -88,4 +88,49 @@ def solveBoltzEqs(xvals : NDArray, Y0 : NDArray,
         y0 = sol.y[:,-1]
     
     return sol, x, y
+
+def solveBoltzEqs_old(xvals : List[float], Y0 : List[float], model : ModelData,
+                  method : str = 'Radau', 
+                  atol : float = 1e-10,
+                  rtol : float = 1e-10,):
+
+
+    # Initial conditions
+    x0, xf = xvals[0],xvals[-1]
+    nsteps = len(xvals)
+    n_eval = int(nsteps/4)
+    #solving the Boltzmann equation
+
+    sol = solve_ivp(dYdx, [x0,7], Y0, args=(model,), atol = 10**(-12), rtol = 10**(-12), method=method, max_step = 0.08,
+                 t_eval=np.geomspace(x0,7,n_eval))
+    y = sol.y[:]
+    x = sol.t[:]
+    if sol.success:
+        sol2 = solve_ivp(dYdx, [sol.t[-1],12], sol.y[:,-1], args=(model,), atol = 10**(-10), rtol = 10**(-10), method=method, max_step = 0.08,
+                 t_eval=np.geomspace(sol.t[-1],12,n_eval))
+        y_sol = sol2.y[:]
+        x_sol = sol2.t[:]
+        y = np.hstack((y,y_sol))
+        x = np.hstack((x,x_sol))
+        if sol2.success:
+            sol3 = solve_ivp(dYdx, [sol2.t[-1],110], sol2.y[:,-1], args=(model,), atol = 10**(-13), rtol = 10**(-13), method=method, max_step = 0.04,
+                 t_eval=np.geomspace(sol2.t[-1],110,n_eval))
+            y_sol = sol3.y[:]
+            x_sol = sol3.t[:]
+            y = np.hstack((y,y_sol))
+            x = np.hstack((x,x_sol))
+            if sol3.success:
+                sol4 = solve_ivp(dYdx, [sol3.t[-1],xf], sol3.y[:,-1], args=(model,), atol = atol, rtol = rtol, method=method, max_step = 0.08,
+                        t_eval=np.geomspace(sol3.t[-1],xf,n_eval))
+                y_sol = sol4.y[:]
+                x_sol = sol4.t[:]
+                y = np.hstack((y,y_sol))
+                x = np.hstack((x,x_sol))
+                return sol4, x, y
+            else:
+                return sol3, x, y
+        else:
+            return sol2, x, y
+    else:
+        return sol, x, y
     

@@ -38,10 +38,10 @@ def computeDecayTerms(x: float, Y : List[float], model : ModelData) -> List[Dict
             daughter_ids = [daughter.ID for daughter in daughters]
             for j in sorted(daughter_ids):
                 if Yeq_i > 0.0:
-                    Yprod = np.prod([Y[daughter.ID]*comp_i.Req(daughter,T) for daughter in daughters])
+                    Yprod = np.prod([Y[daughter.ID]/daughter.Yeq(T) for daughter in daughters])
                 else:
                     Yprod = 0.0
-                Dij_alpha = gamma_i*comp_i.totalwidth*br*(Y_i - Yprod)/s
+                Dij_alpha = gamma_i*comp_i.totalwidth*br*(Y_i - Yeq_i*Yprod)/s
                 is_nan = np.isnan(Dij_alpha)
                 if is_nan == False:
                     dec_terms[i]['decay'] -= Dij_alpha
