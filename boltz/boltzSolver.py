@@ -1,15 +1,15 @@
 
 from scipy.integrate import solve_ivp,odeint
 from boltz.boltzmannEq import dYdx
-from typing import List
+from scipy.integrate import OdeSolution
+from typing import List,Tuple,Union
 from tools.modelData import ModelData
 import numpy as np
 from numpy.typing import NDArray
-from scipy.integrate import OdeSolution
 from tools.logger import logger
 
 
-def runSolver(parser : dict, model : ModelData):
+def runSolver(parser : dict, model : ModelData) -> Tuple[Union[OdeSolution,None],NDArray,NDArray]:
     
     logger.debug(f'Solving Boltzmann equations for {model}')
 
@@ -42,7 +42,7 @@ def runSolver(parser : dict, model : ModelData):
                 y0[comp.ID] = comp_y0
             else:
                 logger.error(f"Could not set initial condition to {comp_y0}")
-                return False
+                raise ValueError()
         
     xvals = np.geomspace(x0,xf,nsteps)
 
@@ -51,10 +51,11 @@ def runSolver(parser : dict, model : ModelData):
     
     return solution
 
-def solveBoltzEqs(xvals : NDArray, Y0 : NDArray, model : ModelData,
+def solveBoltzEqs(xvals : NDArray, Y0 : NDArray, 
+                  model : ModelData,
                   method : str = 'Radau', 
                   atol : float = 1e-10,
-                  rtol : float = 1e-10,):
+                  rtol : float = 1e-10,) -> Tuple[Union[OdeSolution,None],NDArray,NDArray]:
 
 
     # Initial conditions

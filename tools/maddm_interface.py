@@ -45,7 +45,7 @@ def runMadDM(parser : dict) -> str:
     #Generate commands file:       
     commandsFile,cFilePath = tempfile.mkstemp(suffix='.txt', 
                                               prefix='maddm_commands_', 
-                                              dir=maddmFolder)    
+                                              dir=outputFolder)    
     os.close(commandsFile)
     commandsFileF = open(cFilePath,'w')
     commandsFileF.write(f'import model {modelDir}\n')

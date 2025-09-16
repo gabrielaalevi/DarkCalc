@@ -5,6 +5,8 @@
 
 from __future__ import print_function
 import sys,os
+from scipy.integrate import OdeSolution
+from typing import Union
 from tools.configParserWrapper import ConfigParserExt
 from tools.logger import logger,setLogLevel
 from tools.maddm_interface import runMadDM
@@ -19,7 +21,7 @@ import numpy as np
 
 
 
-def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> bool:
+def saveSolutions(parser : dict, x_sol, y_sol, model : ModelData) -> bool:
 
     pars = parser['SolverParameters']
     extended = bool(pars['extendedOutput'])
@@ -77,7 +79,7 @@ def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> b
 
     return True
 
-def runSolution(parser : dict) -> bool:
+def runSolution(parser : dict) -> Union[OdeSolution,None]:
     """
     Run MadDM, load the model and solve the Boltzmann equations
 
@@ -103,13 +105,15 @@ def runSolution(parser : dict) -> bool:
     t0 = time.time()
     logger.info(f"Solving Boltzmann equations using {bannerFile}")
     sol, x_sol, y_sol = runSolver(parser,model)
-    if sol.success:
+    if (sol is not None) and sol.success:
         dt = (time.time()-t0)
         logger.info(f"Solved Boltzmann equations in {dt:1.1f} s")
         logger.info("Saving solutions")
-        saveSolutions(parser,sol, x_sol, y_sol,model)
+        saveSolutions(parser,x_sol, y_sol,model)
     else:
-        logger.error(f"Error solving Boltzmann equations:\n {sol.message}\n")
+        logger.error(f"Error solving Boltzmann equations.")
+        if (sol is not None):
+            logger.error(f"\n {sol.message}\n")
     return sol
 
 
