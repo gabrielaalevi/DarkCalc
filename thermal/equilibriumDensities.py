@@ -1,6 +1,7 @@
 #This module has auxiliary functions
 from scipy.special import kn, zeta
 from numpy import pi,sqrt,exp
+import numpy as np
 m_planck = 1.2209 * 10**(19) #reduced planck mass, in GeV
 
 def gstar(T: float) -> float:
@@ -70,7 +71,7 @@ def S(T: float) -> float:
     return s
 
 
-def Neq(T: float, m: float, g: int) -> float:
+def Neq_n(n: int, T: float, m: float, g: int) -> float:
     """
     Calculates the equilibrium number density at a temperature T (in GeV) for a certain particle, 
     using Fermi-Dirac or Bose-Einstein Statistics.
@@ -80,23 +81,45 @@ def Neq(T: float, m: float, g: int) -> float:
     :param g: Particle's degrees of freedom. Use g < 0 for bosons and g > 0 for fermions
 
     """
-    #m represents particle's mass, T is temperature in GeV, g represents the particle's degrees of freedom, 
-    #and s represents entropy density.
-    
 
-    xm = m/T     
+    xm = m/T
+    fac = abs(g)
+    if g < 0: 
+        fac = fac*(-1)**n # factor for fermions
+    
     if xm > 10: #non-relativistic regime
-        coeffs = [1,15./8.,105./128.,-315./1024.,10395./32768.]
-        neq = (m**3*exp(-xm)/(xm**(3/2)))*(1/(2*sqrt(2)*pi**(3/2)))
-        neq = neq*sum([c/xm**i for i,c in enumerate(coeffs)])
-    elif xm > (0.25): #semi-relativistic regime
-        neq = m**3*(1/(2*pi**2))*kn(2, xm)/xm
+        coeffs = np.array([1,15./8.,105./128.,-315./1024.,10395./32768.])
+        fac = fac*(m**3*exp(-xm*(1+n))/(xm**(3/2)))*(1/(2*sqrt(2)*pi**(3/2)))
+        terms = np.array([(xm**i)*(1.0+n)**(3./2.+i) for i in range(len(coeffs))])
+        neq_n = fac*sum(coeffs/terms)
+    elif xm > (0.15): #semi-relativistic regime
+        neq_n = fac*m**3*(1/(2*(1+n)*pi**2))*kn(2, xm*(1+n))/xm
     else: #relativistic regime
-        neq = (zeta(3)/pi**2)*T**3 # bosons
-        if g < 0:
-           neq = (3/4)*neq # fermions
-            
-    neq = abs(g)*neq
+        if n == 0:
+            neq_n = abs(g)*(zeta(3)/pi**2)*T**3 # bosons
+            if g < 0:
+                neq_n = (3/4)*neq_n # fermions
+        else:
+            neq_n = 0.0
+    
+    return neq_n
+
+def Neq(T: float, m: float, g: int, nmax : int = 5) -> float:
+    """
+    Calculates the equilibrium number density at a temperature T (in GeV) for a certain particle, 
+    using Fermi-Dirac or Bose-Einstein Statistics.
+
+    :param T: thermal bath temperature (in GeV)
+    :param m: Particle mass
+    :param g: Particle's degrees of freedom. Use g < 0 for bosons and g > 0 for fermions
+    :param nmax: Maximum order for corrections to the Maxwerll-Boltzmann distribution 
+                 (nmax = 0 is equivalent to assuming Maxwell-Boltzmann for the non-relativistic regime)
+
+    """
+
+    neq = 0.0
+    for n in range(0,nmax+1):
+        neq += Neq_n(n,T,m,g)
     
     return neq
 
