@@ -7,6 +7,7 @@ from tools.modelData import ModelData
 import numpy as np
 from numpy.typing import NDArray
 from tools.logger import logger
+import warnings
 
 
 def runSolver(parser : dict, model : ModelData) -> Tuple[Union[OdeSolution,None],NDArray,NDArray]:
@@ -24,8 +25,18 @@ def runSolver(parser : dict, model : ModelData) -> Tuple[Union[OdeSolution,None]
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     x0 = mDM/T0
-    xf = mDM/Tf    
+    xf = mDM/Tf
 
+    mass_max = max([ptc.mass for ptc in compDict.values()])
+    with warnings.catch_warnings():
+        warnings.filterwarnings('error', category=RuntimeWarning) # Treat RuntimeWarning as an error
+        try:
+            np.exp(mass_max/Tf)
+        except RuntimeWarning:
+            msg = f"Final temperature value {Tf:1.2e} is well below"
+            msg += f"the largest BSM mass ({mass_max:1.3f}) and may cause numerical instabilities"
+            logger.warning(msg)
+    
     
     # Initialize all components in equilibrium
     y0 = np.array([comp.Yeq(T0) for comp in compDict.values()])    
