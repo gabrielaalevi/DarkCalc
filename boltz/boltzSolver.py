@@ -14,12 +14,13 @@ def runSolver(parser : dict, model : ModelData) -> Tuple[Union[OdeSolution,None]
     logger.debug(f'Solving Boltzmann equations for {model}')
 
     pars = parser['SolverParameters']
-    atol = pars['atol']
-    rtol = pars['rtol']
+    atol = pars.get('atol',1e-10)
+    rtol = pars.get('rtol',1e-4)
     T0 = pars['T0']
     Tf = pars['Tf']
-    method = pars['method']
-    nsteps = pars['nsteps']
+    method = pars.get('method','Radau')
+    nsteps = pars.get('nsteps',10000)
+    max_step = pars.get('max_step',0.1)
     compDict = model.componentsDict
     mDM = compDict[model.dmPDG].mass
     x0 = mDM/T0
@@ -47,7 +48,8 @@ def runSolver(parser : dict, model : ModelData) -> Tuple[Union[OdeSolution,None]
     xvals = np.geomspace(x0,xf,nsteps)
 
     solution = solveBoltzEqs(xvals,Y0=y0,model=model,
-                             method=method,atol=atol,rtol=rtol)
+                             method=method,atol=atol,rtol=rtol,
+                             max_step=max_step)
     
     return solution
 
@@ -55,7 +57,8 @@ def solveBoltzEqs(xvals : NDArray, Y0 : NDArray,
                   model : ModelData,
                   method : str = 'Radau', 
                   atol : float = 1e-10,
-                  rtol : float = 1e-10,) -> Tuple[Union[OdeSolution,None],NDArray,NDArray]:
+                  rtol : float = 1e-10,
+                  max_step : float = 0.1,) -> Tuple[Union[OdeSolution,None],NDArray,NDArray]:
 
 
     # Initial conditions
@@ -66,7 +69,7 @@ def solveBoltzEqs(xvals : NDArray, Y0 : NDArray,
 
     # It is usually convenient to break the solution into smaller intervals:
     xfList = [7.,12.,110.,xf]
-    xfList = [x for x in xfList[:] if x <= xf]
+    xfList = [x for x in xfList[:] if x0 < x <= xf]
 
 
     x = np.array([])
@@ -76,8 +79,8 @@ def solveBoltzEqs(xvals : NDArray, Y0 : NDArray,
     for xf_val in xfList:
         logger.debug(f'Solving in the interval {x0} to {xf_val}')
         sol = solve_ivp(dYdx, [x0,xf_val], y0=y0, args=(model,), 
-                        atol = atol, rtol = rtol, 
-                        method=method, max_step = 0.1,
+                        atol = atol, rtol = rtol, first_step=max_step/5,
+                        method=method, max_step = max_step,
                         t_eval=np.geomspace(x0,xf_val,n_eval))
         if not sol.success:
             return sol, x, y
@@ -92,7 +95,8 @@ def solveBoltzEqs(xvals : NDArray, Y0 : NDArray,
 def solveBoltzEqs_old(xvals : List[float], Y0 : List[float], model : ModelData,
                   method : str = 'Radau', 
                   atol : float = 1e-10,
-                  rtol : float = 1e-10,):
+                  rtol : float = 1e-10,
+                  max_step : float = 0.1,):
 
 
     # Initial conditions

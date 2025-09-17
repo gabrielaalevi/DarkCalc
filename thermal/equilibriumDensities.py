@@ -2,6 +2,7 @@
 from scipy.special import kn, zeta
 from numpy import pi,sqrt,exp
 import numpy as np
+from tools.logger import logger
 m_planck = 1.2209 * 10**(19) #reduced planck mass, in GeV
 
 def gstar(T: float) -> float:
@@ -193,7 +194,8 @@ def Req(T: float, m1: float, g1: int, m2 : float, g2: int) -> float:
         req = (xi[0]/xi[1])*mdiff_fac*abs(g1)/abs(g2)
 
     if np.isinf(req) or np.isnan(req):
-        raise ValueError(f"Trying to compute ratios of number densities at T = {T:1.2e} lead to infinities. Try to increase the final temperature.")
+        logger.error(f"Trying to compute ratios of number densities at T = {T:1.2e} lead to infinities. Try to increase the final temperature.")
+        raise ValueError()
     
     return req
 

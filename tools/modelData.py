@@ -12,6 +12,9 @@ from typing import List, Dict, Union
 from tools.logger import logger
 import os
 
+smPDGs = [0, 1, 2, 3, 4, 5, 6,
+          11, 12, 13, 14, 15, 16, 
+          21, 22, 23, 24, 25, 111, 211]
 
 
 
@@ -169,8 +172,8 @@ class ModelData(object):
     and collision processes
     """
 
-    def __init__(self, dmPDG : int,  
-                 bsmPDGList : List[int], 
+    def __init__(self, dmPDG : Union[int,str],  
+                 bsmPDGList : List[Union[int,str]], 
                  bannerFile : Optional[str] = None):
         """
         :param bsmPDGList: Used to selected the BSM particles to include in the Boltzmann equations. 
@@ -369,24 +372,31 @@ class ModelData(object):
                                     'finalPDGs' : list(map(int, finalPDGs.split(',')))}
         processes_data = np.genfromtxt(lines, delimiter=',', skip_header=len(comment_lines), 
                                     names=True)
-        
+        allPDGs = np.abs(smPDGs+self.pdgList)
         for proc_index,pInfo in processDict.items():
-            process = CollisionProcess(initialPDGs=pInfo['initialPDGs'],
-                                    finalPDGs=pInfo['finalPDGs'],
+            inPDGs = pInfo['initialPDGs']
+            outPDGs = pInfo['finalPDGs']
+            # Skip processes containing BSM particles not in the model
+            if any(abs(x) not in allPDGs for x in inPDGs+outPDGs):
+                logger.info(f'Skipping collision process {inPDGs} <-> {outPDGs}')
+                continue
+
+            process = CollisionProcess(initialPDGs=inPDGs,
+                                    finalPDGs=outPDGs,
                                     name=pInfo['name'])
             process.setSigmaV(xlist=processes_data['x'],
                             sigmavList=processes_data[proc_index])
 
             self.collisionProcesses.append(process)
 
-        # Assume all the PDGs not appearing in self.pdgList are in thermal equilibrium (SM)
-        # and set their PDG to zero
+
+        # Set all SM PDGs to zero (assume all SM particles are in thermal equilibrium)
         if self.pdgList:
            for proc in self.collisionProcesses:
                initPDGs = proc.initialPDGs[:]
-               proc.initialPDGs = [x if x in self.pdgList else 0 for x in initPDGs ]
+               proc.initialPDGs = [0 if abs(x) in smPDGs else x for x in initPDGs ]
                finalPDGs = proc.finalPDGs[:]
-               proc.finalPDGs = [x if x in self.pdgList else 0 for x in finalPDGs ]
+               proc.finalPDGs = [0 if abs(x) in smPDGs else x for x in finalPDGs ]
 
     def createLabel2PDGDict(self) -> None:
         if not hasattr(self,'_label2pdgDict'):
