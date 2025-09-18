@@ -124,6 +124,11 @@ def runSolution(parser : dict) -> Union[OdeSolution,None]:
         logger.error(f"Error solving Boltzmann equations.")
         if (sol is not None):
             logger.error(f"\n {sol.message}\n")
+            x = sol.t[-1]
+            T = model.componentsDict[model.dmPDG].mass/x
+            logger.error(f"\n last successful point: T = {T:1.4e} (x = {x:1.4e})")
+            labels = [comp.label for comp in sorted(model.componentsDict.values(), key= lambda comp: comp.ID)]
+            logger.error(f"\n Y({labels}) = {sol.y[:,-1]}")
     return sol
 
 
