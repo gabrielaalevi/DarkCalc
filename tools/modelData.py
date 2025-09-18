@@ -197,7 +197,7 @@ class ModelData(object):
         smComponent = Component(label='SM',PDG=0, mass = 0.0, g = 1.0, ID = 0)
         # The a dynamical number of degrees of freedom for the SM
         smComponent.g = gstar
-        self.componentsDict : Dict[int,Component] = {0 : smComponent}
+        self.componentsDict : Dict[Union[str,int],Component] = {0 : smComponent}
         self.collisionProcesses : List[CollisionProcess] = []
         self.dmPDG = dmPDG # Dark Matter PDG code
         self.pdgList = bsmPDGList[:]

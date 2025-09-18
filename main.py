@@ -17,6 +17,7 @@ import thermal.equilibriumDensities as eqDensitities
 import multiprocessing
 import time,datetime
 import numpy as np
+from io import StringIO
 
 
 
@@ -44,13 +45,12 @@ def saveSolutions(parser : dict, x_sol, y_sol, model : ModelData) -> bool:
     
     Ytot = sum(data[-1][1:])
     omh2 = ((s * mDM * Ytot)/rho_c)
-    logger.info(f'\n\nOmega*h^2 = {omh2:1.4g}\n')
 
     if extended:
         mDM = compDict[model.dmPDG].mass
         Di_vec = []
         Cij_vec = []
-        proc_names = None
+        proc_names = []
         for i,x in enumerate(x_sol):
             H = eqDensitities.H(mDM/x) #hubble rate at temperature T
             dsdx = np.abs(eqDensitities.dSdx(x, mDM)) #variation of entropy with x
@@ -58,7 +58,7 @@ def saveSolutions(parser : dict, x_sol, y_sol, model : ModelData) -> bool:
             # Print decay terms
             Di_vec.append([(dec['decay']/(3*H))*dsdx for dec in computeDecayTerms(x,Y,model)][1:])
             c = computeCollisionTerms(x,Y,model)
-            if proc_names is None:                
+            if len(proc_names) == 0:
                 proc_names = [name for cc in c for name in cc.keys()]
             proc_values = [(sigma/(3*H))*dsdx 
                            for cc in c for sigma in cc.values()]
@@ -70,11 +70,21 @@ def saveSolutions(parser : dict, x_sol, y_sol, model : ModelData) -> bool:
         
         data = np.hstack((data,Di_vec))
         data = np.hstack((data,Cij_vec))
-        
+    
+    # headerList = [f'{label:^10}' for label in headerList[:]]
     header = ','.join(headerList)
     outFolder = os.path.abspath(parser['Options']['outputFolder'])
     outFile = os.path.join(outFolder,pars['outputFile'])
-    np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')
+    data_str = StringIO()
+    np.savetxt(data_str,data,header=header,fmt='%1.4e',delimiter=',',comments='')
+    data_str = data_str.getvalue()
+    with open(outFile,'w') as f:
+        f.write(f'# Boltzmann solutions.\n# Total relic abundance Omega*h^2 = {omh2:1.4g}\n')
+        f.write(f'# x = (DM mass)/T, Y(i) = Yield for particle i\n')
+        if extended:
+            f.write(f'# D(i) = decay term for particle i\n')
+            f.write(f'# C(process) = collision term for process\n')
+        f.write(data_str)
     logger.info(f'Boltzmann equation solutions saved to {outFile}') 
 
     return True
