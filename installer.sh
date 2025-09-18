@@ -7,7 +7,6 @@ echo "Installation will take place in $homeDIR"
 cd $homeDIR
 
 
-#madgraph="./MadDM/MG5_aMC_v3_6_4_maddm.tar.gz"
 madgraph="./MadDM/MG5_aMC_v3_5_4_maddm.tar.gz"
 URL=https://launchpad.net/mg5amcnlo/3.0/3.5.x/+download/$madgraph
 echo -n "Install MadGraph (y/n)? "
