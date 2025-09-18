@@ -1,9 +1,12 @@
-import os
+import os,shutil
 from tools.logger import logger
 import tempfile
 import subprocess
 import numpy as np
-
+import json
+from io import StringIO
+from tools.modelData import smPDGs
+from typing import Union
 
 
 def runMadDM(parser : dict) -> str:
@@ -99,6 +102,76 @@ def runMadDM(parser : dict) -> str:
     else:
         return mergeOutput(outputFolder, maddmFolder, addConversion)
 
+@np.vectorize
+def is_sm(pdg : int) -> bool:
+    """
+    Checks if the PDG belongs to the SM
+    """
+    return abs(pdg) in smPDGs
+
+
+def simplifyProcess(pDict : dict) -> dict:
+    """
+    Simplify the collision process. The SM PDGs are replaced by zero
+    and if the process is of the type BSM_i BSM_j <-> SM_a SM_b,
+    its name is simplified to BSM_i BSM_j <-> SM SM.
+    It also replaces all PDGs by their absolute values.
+    """
+
+    pDict_new = {k : v for k,v in pDict.items()}
+    pname = pDict['name']
+    initialPDGs = pDict['initialPDGs']
+    finalPDGs = pDict['finalPDGs']
+    if sum(is_sm(initialPDGs)) == len(initialPDGs):
+        in_new = 'SMSM'
+    else:
+        in_new = pname.split('_')[0]
+    if sum(is_sm(finalPDGs)) == len(finalPDGs):
+        out_new = 'SMSM'
+    else:
+        out_new = pname.split('_')[1]
+    pname_new = in_new+'_'+out_new
+    initialPDGs_new = np.where(is_sm(initialPDGs),0,initialPDGs)
+    finalPDGs_new = np.where(is_sm(finalPDGs),0,finalPDGs)
+    
+    pDict_new['name'] = pname_new
+    pDict_new['initialPDGs'] = sorted([abs(pdg) for pdg in initialPDGs_new])
+    pDict_new['finalPDGs'] = sorted([abs(pdg) for pdg in finalPDGs_new])
+
+    return pDict_new
+
+
+def convertProcess(pDict : dict, index_str : str = "") -> Union[None,dict]:
+    """
+    Convert the collision process to a conversion process.
+    It is only applicable to processes of type BSM_i BSM_j <-> SM SM,
+    otherwise it returns None.
+    It assumes the thermally averaged cross-section for BSM_i BSM_j <-> SM SM
+    is the same for SM BSM_j <-> SM BSM_i.    
+    """
+    inPDGs = sorted(pDict['initialPDGs'])
+    outPDGs = sorted(pDict['finalPDGs'])
+    # First check if the process is of type  BSM_i BSM_j <-> SM SM
+    if all(is_sm(pdg) for pdg in inPDGs) and all(not is_sm(pdg) for pdg in outPDGs):
+        # Convert SM SM -> BSM_i BSM_j to SM BSM_i -> BSM_j SM
+        inPDGs_new = inPDGs[:-1] + [outPDGs[0]]
+        outPDGs_new = outPDGs[1:] + [inPDGs[-1]]        
+    elif all(is_sm(pdg) for pdg in outPDGs) and all(not is_sm(pdg) for pdg in inPDGs):
+        # Convert BSM_i BSM_j <-> SM SM to SM BSM_j <-> BSM_i SM
+        inPDGs_new = inPDGs[1:] + [outPDGs[0]]
+        outPDGs_new = outPDGs[1:] + [inPDGs[0]]
+    else:
+        return None
+    
+    pDict_new = {k : v for k,v in pDict.items()}
+    pDict_new['initialPDGs'] = sorted(inPDGs_new)
+    pDict_new['finalPDGs'] = sorted(outPDGs_new)
+    pDict_new['name'] = 'conversion'
+    if index_str:
+        pDict_new['index'] = index_str
+
+    return pDict_new
+
 def mergeOutput(outputFolder : str, maddmFolder : str, addConversion: bool) -> str:
     """
     Combines the param_card and the sigmaVFile into a single file,
@@ -114,87 +187,91 @@ def mergeOutput(outputFolder : str, maddmFolder : str, addConversion: bool) -> s
     if not os.path.isfile(sigmaVFile):
         logger.error(f"SigmaV file ({sigmaVFile} not found)")
         raise FileNotFoundError()
+    
+    # Loads the MadDM output (taacs.csv)
+    with open(sigmaVFile, 'r') as f:
+        lines = f.readlines()
+    data = [l for l in lines if l.strip()[0] != '#']
+    processInfo = [l for l in lines if (l.strip()[0] == '#') and (l.count('#') == 1)]
+    data = np.genfromtxt(data,delimiter=',',comments='#',names=True)
 
-    with open(paramCard,'r') as f:
-        paramCard = f.read()
-    with open(sigmaVFile,'r') as f:
-        sigmaV = f.read()
-
-    lines = [l.strip() for l in sigmaV.splitlines() if l.strip()]
-    # Get process dictionary        
-    comment_lines =  [l for l in lines if l[0] == '#']
-    proc_lines = [l[1:].strip() for l in comment_lines if (l.count('#') == 1)]
+    # Extract the cross-sections for each process and simplify the processes
     processDict = {}
-    for l in proc_lines:    
-        proc_index,proc_name,proc_pdgs = (l.split(',',2))
-        proc_pdgs = proc_pdgs.replace('[','').replace(']','').replace('-', '')
-        iPDGs,fPDGs = proc_pdgs.split('_')
-        initialPDGs = list(map(int, iPDGs.split(',')))
-        finalPDGs = list(map(int, fPDGs.split(',')))
-        count_reaction = 0
-        for j in processDict.items():
-            dict_initial_pdgs = j[1]['initialPDGs']
-            dict_final_pdgs = j[1]['finalPDGs']
-            if (int(initialPDGs[0]) == int(dict_initial_pdgs[0])) and float(initialPDGs[1]) == float(dict_initial_pdgs[1]) and float(finalPDGs[0]) < 30 and float(finalPDGs[1]) < 30 and float(dict_final_pdgs[0])<30 and float(dict_final_pdgs[1])<30:
-                count_reaction += 1
-        if count_reaction == 0:
-            processDict[proc_index] = {'name' : proc_name.strip(), 
-                                    'initialPDGs' : initialPDGs, 
-                                    'finalPDGs' : finalPDGs}
-            processes_data = np.genfromtxt(lines, delimiter=',', skip_header=len(comment_lines), 
-                                    names=True)
-        for proc_index,pInfo in processDict.items():
-            if addConversion == True:
-                counter = 0 #we only need one co-annihilation interaction to calculate the conversion taacs, so we set a counter
-                if abs(pInfo['initialPDGs'][0]) != abs(pInfo['initialPDGs'][1]) and counter == 0:
-                    counter = counter + 1
-                    conv_index = len(proc_lines) + 1
-                    conv_line = '#   ' + str(conv_index) + ',conversion                                        ,['+str(pInfo['initialPDGs'][0])+', '+str(pInfo['finalPDGs'][0])+']_['+str(pInfo['initialPDGs'][1])+', '+str(pInfo['finalPDGs'][1])+']\n'
-                    conv_taacs = processes_data[proc_index]
-                    processes =  ''
-                    taacs_header = 'x,'
-                    for k in processDict.items():
-                        processes = processes + '#   ' + str(k[0]) + ',' + k[1]['name'] + '                                          ,[' + str(k[1]['initialPDGs'][0])+',' + str(k[1]['initialPDGs'][1]) +']_[' + str(k[1]['finalPDGs'][0]) + ',' + str(k[1]['finalPDGs'][1]) + ']\n'
-                        taacs_header = taacs_header + ' ' + str(k[0]) + ','
-                    processes = processes + conv_line
-                    taacs_header = taacs_header + ' ' + str(conv_index) + '\n'
-                    original_processes, taacs = sigmaV.split('x,  1', 1)
-                    header_original, taacs_values = taacs.split(str(len(proc_lines)), 1)
-                    taacs_lines = [l.strip() for l in taacs_values.splitlines() if l.strip()]
-                    new_taacs_lines = ''
-                    for i in range(0, len(taacs_lines)):
-                        new_taacs_lines = new_taacs_lines + str(processes_data[i][0])
-                        for m in processDict.items():
-                            new_taacs_lines = new_taacs_lines + ',' + str(processes_data[i][m[0]])
-                        new_taacs_lines = new_taacs_lines + ',' + str(conv_taacs[i]) + '\n'
+    for line in processInfo:    
+        proc_index, proc_name, proc_pdgs = line.replace('\n','').split(',',2)
+        proc_index = proc_index.replace('#', '').strip()
+        proc_name = proc_name.strip()
+        initialPDGs,finalPDGs = proc_pdgs.split('_')
+        initialPDGs = sorted(json.loads(initialPDGs)) # Convert to list
+        finalPDGs = sorted(json.loads(finalPDGs)) # Convert to list
+        if proc_index not in data.dtype.names:
+            loggger.error(f'Process {proc_index} ({proc_name}) not found in data columns.')
+            raise ValueError()
+        pDict = {'index' : proc_index,
+                'name' : proc_name,
+                'initialPDGs' : initialPDGs, 
+                'finalPDGs' : finalPDGs,
+                'data' : np.array(data[['x',proc_index]].tolist())
+                }
+        # Simplify the process (replace SM PDGs by zero and simplify process name)
+        pDict = simplifyProcess(pDict)
+        proc = (tuple(pDict['initialPDGs']),tuple(pDict['finalPDGs']))
+        # If the process has already appeared, add its cross-section:
+        if proc in processDict:
+            processDict[proc]['data'][:,1] +=  pDict['data'][:,1]
+        else:
+            processDict[proc] = simplifyProcess(pDict)
+            
+    # If required, use processes of type BSM_i BSM_j <-> SM_a SM_b
+    # to add conversion process (SM BSM_j <-> SM BSM_i)
+    max_index = max([int(pDict['index']) for pDict in processDict.values()])
+    max_index += 1
+    if addConversion:
+        for proc,pDict in list(processDict.items()):
+            pDict_new = convertProcess(pDict,index_str=str(max_index))
+            if pDict_new is None:
+                continue
+            proc_new = (tuple(pDict_new['initialPDGs']),
+                        tuple(pDict_new['finalPDGs']))
+            # Conversion process was already present, skip
+            if proc_new in processDict:
+                continue
             else:
-                processes =  ''
-                taacs_header = 'x'
-                for k in processDict.items():
-                    processes = processes + '#   ' + str(k[0]) + ',' + k[1]['name'] + '                                          ,[' + str(k[1]['initialPDGs'][0])+',' + str(k[1]['initialPDGs'][1]) +']_[' + str(k[1]['finalPDGs'][0]) + ',' + str(k[1]['finalPDGs'][1]) + ']\n'
-                    taacs_header = taacs_header + ', ' + str(k[0])
-                taacs_header = taacs_header + '\n'
-                original_processes, taacs = sigmaV.split('x,  1', 1)
-                header_original, taacs_values = taacs.split(str(len(proc_lines)), 1)
-                taacs_lines = [l.strip() for l in taacs_values.splitlines() if l.strip()]
-                new_taacs_lines = ''
-                for i in range(0, len(taacs_lines)):
-                    new_taacs_lines = new_taacs_lines + str(processes_data[i][0])
-                    for m in processDict.items():
-                        new_taacs_lines = new_taacs_lines + ',' + str(processes_data[i][m[0]])
-                    new_taacs_lines = new_taacs_lines + '\n'
-
+                processDict[proc_new] = pDict_new
+                max_index += 1
+        
+    # Add processes to param_card
     newFile = os.path.join(outputFolder,'darkcalc_banner.txt')
+    with open(paramCard,'r') as f:
+        paramCard_data = f.read()
+    
     with open(newFile,'w') as f:
         f.write("<DarkCalc version='1.0'>\n")
         f.write("<header>\n")
         f.write("<slha>\n")
-        f.write(paramCard)
+        f.write(paramCard_data)
         f.write("</slha>\n")
         f.write("<sigmav>\n")
-        f.write(processes)
-        f.write(taacs_header)
-        f.write(new_taacs_lines)
+        # Write header lines
+        for pDict in processDict.values():
+            header_line = f'#{str(pDict['index']):>{4}},{pDict['name']:<{50}},{pDict['initialPDGs']}_{pDict['finalPDGs']}'
+            f.write(header_line+'\n')
+        # Now write labels for columns and combine data:
+        column_labels = [f"{'x':^10}"]
+        data = np.array([])
+        for pDict in processDict.values():
+            column_labels.append(f"{pDict['index']:^10}")
+            if len(data) == 0:
+                data = pDict['data']
+            else:
+                data = np.insert(data,data.shape[-1],
+                                 pDict['data'][:,1],axis=1)
+        f.write(','.join(column_labels)+'\n')
+        # Convert data to string
+        data_str = StringIO()
+        np.savetxt(data_str, data, fmt='%1.4e', delimiter=',')
+        data_str = data_str.getvalue()
+        f.write(data_str)
         f.write("</sigmav>\n")
         f.write("</header>\n")
         f.write("</DarkCalc>")
