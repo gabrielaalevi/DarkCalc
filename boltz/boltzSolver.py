@@ -34,7 +34,7 @@ def runSolver(parser : dict, model : ModelData) -> Tuple[Union[OdeSolution,None]
             np.exp(mass_max/Tf)
         except RuntimeWarning:
             msg = f"Final temperature value {Tf:1.2e} is well below"
-            msg += f"the largest BSM mass ({mass_max:1.3f}) and may cause numerical instabilities"
+            msg += f" the largest BSM mass ({mass_max:1.3f}) and may cause numerical instabilities"
             logger.warning(msg)
     
     

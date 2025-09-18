@@ -22,7 +22,8 @@ if echo "$answer" | grep -iq "^y" ;then
 	cp MadDM/MGoutput.py MG5/PLUGIN/maddm/;
 	cp MadDM/maddm.inc MG5/PLUGIN/maddm/python_templates/;
 	cp MadDM/madgraph_interface.py MG5/madgraph/interface/;
-	cp MadDM/common_run_interface.py MG5/madgraph/interface/;
+        cp MadDM/common_run_interface.py MG5/madgraph/interface/;
+        cp MadDM/model_reader.py MG5/models/;
 fi
 
 cd $currentDIR

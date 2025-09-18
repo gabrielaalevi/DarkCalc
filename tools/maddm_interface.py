@@ -37,9 +37,9 @@ def runMadDM(parser : dict) -> str:
     else:
         bsmList = []
 
-    if 'addConversion' in parser['Options']:
-        addConversion = bool(parser['Options']['addConversion'])
-    else:
+    addConversion = parser['Options'].get('addConversion',False)
+    # If there are no additional BSM particles, addConversion should be False
+    if not bsmList:
         addConversion = False
 
     #Generate commands file:       
@@ -167,7 +167,7 @@ def mergeOutput(outputFolder : str, maddmFolder : str, addConversion: bool) -> s
                         for m in processDict.items():
                             new_taacs_lines = new_taacs_lines + ',' + str(processes_data[i][m[0]])
                         new_taacs_lines = new_taacs_lines + ',' + str(conv_taacs[i]) + '\n'
-            if addConversion == False:
+            else:
                 processes =  ''
                 taacs_header = 'x'
                 for k in processDict.items():
