@@ -218,7 +218,10 @@ def mergeOutput(outputFolder : str, maddmFolder : str, addConversion: bool) -> s
         proc = (tuple(pDict['initialPDGs']),tuple(pDict['finalPDGs']))
         # If the process has already appeared, add its cross-section:
         if proc in processDict:
-            processDict[proc]['data'][:,1] +=  pDict['data'][:,1]
+            continue
+            # The cross-section given by MadDM is already summed over all processes of the same type
+            # so we should not add them up!
+            # processDict[proc]['data'][:,1] +=  pDict['data'][:,1]
         else:
             processDict[proc] = simplifyProcess(pDict)
             
