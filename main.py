@@ -5,6 +5,8 @@
 
 from __future__ import print_function
 import sys,os
+from scipy.integrate import OdeSolution
+from typing import Union
 from tools.configParserWrapper import ConfigParserExt
 from tools.logger import logger,setLogLevel
 from tools.maddm_interface import runMadDM
@@ -15,36 +17,40 @@ import thermal.equilibriumDensities as eqDensitities
 import multiprocessing
 import time,datetime
 import numpy as np
+from io import StringIO
 
 
 
 
-def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> bool:
+def saveSolutions(parser : dict, x_sol, y_sol, model : ModelData) -> bool:
 
     pars = parser['SolverParameters']
     extended = bool(pars['extendedOutput'])
     compDict = model.componentsDict
-    labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID) if comp.ID != 0]
+    labels = [comp.label for comp in sorted(compDict.values(), key= lambda comp: comp.ID)
+               if comp.ID != 0]
     headerList = ['x'] + [f'Y({label})' for label in labels] 
     data = np.array(list(zip(x_sol,*y_sol[1:])))
     Ytot = sum(data[-1][1:])
-    for i,label in enumerate(labels):
-        Y_i = data[-1][i+1]
-        s = 2889.2 #current entropy density
-        rho_c = 1.05 * 10**(-5) #critical density
-        mDM = compDict[model.dmPDG].mass
-        om_i = ((s * mDM * Y_i)/rho_c)
-        logger.info(f"Omega*h^2({label}) = {om_i:1.4e}")
+
+    s = 2889.2 #current entropy density
+    rho_c = 1.05 * 10**(-5) #critical density    
+    mDM = compDict[model.dmPDG].mass # Dark matter mass
+
+    Y_f = data[-1,1:] # final yield
+    om_f = ((s * mDM * Y_f)/rho_c)
+    for i,label in enumerate(labels):        
+        logger.info(f"Omega*h^2({label}) = {om_f[i]:1.4e}")
         
+    
     Ytot = sum(data[-1][1:])
     omh2 = ((s * mDM * Ytot)/rho_c)
-    logger.info(f'\n\nOmega*h^2 = {omh2:1.4g}\n')
 
     if extended:
         mDM = compDict[model.dmPDG].mass
         Di_vec = []
         Cij_vec = []
-        proc_names = None
+        proc_names = []
         for i,x in enumerate(x_sol):
             H = eqDensitities.H(mDM/x) #hubble rate at temperature T
             dsdx = np.abs(eqDensitities.dSdx(x, mDM)) #variation of entropy with x
@@ -52,7 +58,7 @@ def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> b
             # Print decay terms
             Di_vec.append([(dec['decay']/(3*H))*dsdx for dec in computeDecayTerms(x,Y,model)][1:])
             c = computeCollisionTerms(x,Y,model)
-            if proc_names is None:                
+            if len(proc_names) == 0:
                 proc_names = [name for cc in c for name in cc.keys()]
             proc_values = [(sigma/(3*H))*dsdx 
                            for cc in c for sigma in cc.values()]
@@ -64,14 +70,30 @@ def saveSolutions(parser : dict, solution, x_sol, y_sol, model : ModelData) -> b
         
         data = np.hstack((data,Di_vec))
         data = np.hstack((data,Cij_vec))
-        
+    
+    # headerList = [f'{label:^10}' for label in headerList[:]]
     header = ','.join(headerList)
-    outFile = os.path.abspath(pars['outputFile'])
-    np.savetxt(outFile,data,header=header,fmt='%1.4e',delimiter=',')  
+    outFolder = os.path.abspath(parser['Options']['outputFolder'])
+    outFile = os.path.join(outFolder,pars['outputFile'])
+    # Make sure the output folder exists
+    if not os.path.isdir(outFolder):
+        os.makedirs(outFolder)
+
+    data_str = StringIO()
+    np.savetxt(data_str,data,header=header,fmt='%1.4e',delimiter=',',comments='')
+    data_str = data_str.getvalue()
+    with open(outFile,'w') as f:
+        f.write(f'# Boltzmann solutions.\n# Total relic abundance Omega*h^2 = {omh2:1.4g}\n')
+        f.write(f'# x = (DM mass)/T, Y(i) = Yield for particle i\n')
+        if extended:
+            f.write(f'# D(i) = decay term for particle i\n')
+            f.write(f'# C(process) = collision term for process\n')
+        f.write(data_str)
+    logger.info(f'Boltzmann equation solutions saved to {outFile}') 
 
     return True
 
-def runSolution(parser : dict) -> bool:
+def runSolution(parser : dict) -> Union[OdeSolution,None]:
     """
     Run MadDM, load the model and solve the Boltzmann equations
 
@@ -80,30 +102,39 @@ def runSolution(parser : dict) -> bool:
     :return: Dictionary with run info. False if failed.
     """
 
+
     if 'skipMadDM' in parser['Options']:
         skipMadDM = bool(parser['Options']['skipMadDM'])
     else:
         skipMadDM = False
     if not skipMadDM:
-        logger.info("Running MadDM")
-        outputFile = runMadDM(parser)
+        logger.info("Computing thermally averaged cross-sections with MadDM")
+        bannerFile = runMadDM(parser)
         logger.info("Finished MadDM run")
     else:
         outputFolder = os.path.abspath(parser['Options']['outputFolder'])
-        outputFile = os.path.join(outputFolder,'darkcalc_banner.txt')
+        bannerFile_default = os.path.join(outputFolder,'darkcalc_banner.txt')
+        bannerFile = parser['Options'].get('bannerFile',bannerFile_default)
     logger.info("Loading model")
-    model = ModelData.loadModel(parser, outputFile)
+    model = ModelData.loadModel(parser, bannerFile)
     logger.info("Model loaded")
     t0 = time.time()
-    logger.info("Solving Boltzmann equations")
+    logger.info(f"Solving Boltzmann equations using {bannerFile}")
     sol, x_sol, y_sol = runSolver(parser,model)
-    if sol.success:
+    if (sol is not None) and sol.success:
         dt = (time.time()-t0)
         logger.info(f"Solved Boltzmann equations in {dt:1.1f} s")
         logger.info("Saving solutions")
-        saveSolutions(parser,sol, x_sol, y_sol,model)
+        saveSolutions(parser,x_sol, y_sol,model)
     else:
-        logger.error(f"Error solving Boltzmann equations:\n {sol.message}\n")
+        logger.error(f"Error solving Boltzmann equations.")
+        if (sol is not None):
+            logger.error(f"\n {sol.message}\n")
+            x = sol.t[-1]
+            T = model.componentsDict[model.dmPDG].mass/x
+            logger.error(f"\n last successful point: T = {T:1.4e} (x = {x:1.4e})")
+            labels = [comp.label for comp in sorted(model.componentsDict.values(), key= lambda comp: comp.ID)]
+            logger.error(f"\n Y({labels}) = {sol.y[:,-1]}")
     return sol
 
 
@@ -141,7 +172,7 @@ def main(parfile,verbose):
 
     now = datetime.datetime.now()
     children = []
-    for irun,newParser in enumerate(parserList):
+    for _,newParser in enumerate(parserList):
         # Create temporary folder names if running in parallel
         parserDict = newParser.toDict(raw=False)
         logger.debug('submitting with pars:\n %s \n' %parserDict)

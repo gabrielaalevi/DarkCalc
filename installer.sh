@@ -15,13 +15,13 @@ if echo "$answer" | grep -iq "^y" ;then
 	mkdir MG5;
 	echo "[installer] installing MadGraph5 from $madgraph"; tar -zxf $madgraph -C MG5 --strip-components 1;
 	cd $homeDIR
-	sed  "s|homeDIR|$homeDIR|g" mg5_configuration.txt > ./MG5/input/mg5_configuration.txt;
+#	sed  "s|homeDIR|$homeDIR|g" mg5_configuration.txt > ./MG5/input/mg5_configuration.txt;
 	echo "[installer] replacing MadDM files"
 	cp MadDM/get_taacs.f MadDM/maddm.f MadDM/makefile MG5/PLUGIN/maddm/Templates/src/;
 	cp MadDM/MGoutput.py MG5/PLUGIN/maddm/;
 	cp MadDM/maddm.inc MG5/PLUGIN/maddm/python_templates/;
 	cp MadDM/madgraph_interface.py MG5/madgraph/interface/;
-	cp MadDM/common_run_interface.py MG5/madgraph/interface/;
+        cp MadDM/common_run_interface.py MG5/madgraph/interface/;
         cp MadDM/model_reader.py MG5/models/;
 fi
 

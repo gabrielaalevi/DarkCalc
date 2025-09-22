@@ -1,8 +1,8 @@
 #module: Components
 #this module sets the main characteristics for all the involved particles
 
-from thermal.equilibriumDensities import Neq, Yeq, gstar
-from typing import List, Dict, Optional
+from thermal.equilibriumDensities import Neq, Yeq, gstar, Req
+from typing import List, Dict, Optional, Self
 from scipy.interpolate import interp1d
 from scipy.special import kn
 from tools.logger import logger
@@ -12,6 +12,9 @@ from typing import List, Dict, Union
 from tools.logger import logger
 import os
 
+smPDGs = [0, 1, 2, 3, 4, 5, 6,
+          11, 12, 13, 14, 15, 16, 
+          21, 22, 23, 24, 25, 111, 211]
 
 
 
@@ -78,7 +81,21 @@ class Component(object):
         """
         yeq = Yeq(T, self.mass, self.g(T))
         
-        return yeq    
+        return yeq
+
+    def Req(self, other : Self, T: float) -> float:
+        """
+        Returns the ratio of equilibrium yields (Yeq(self)/Yeq(other)).
+        For highly Boltzmann suppressed yields, it is can be more stable
+        than computing each yield separately.
+        """
+
+        m1 = self.mass
+        m2 = other.mass
+        g1 = self.g(T)
+        g2 = other.g(T)
+        return Req(T,m1,g1,m2,g2)
+            
    
     def gammaInv(self,T: float) -> float:
         """
@@ -155,8 +172,8 @@ class ModelData(object):
     and collision processes
     """
 
-    def __init__(self, dmPDG : int,  
-                 bsmPDGList : List[int], 
+    def __init__(self, dmPDG : Union[int,str],  
+                 bsmPDGList : List[Union[int,str]], 
                  bannerFile : Optional[str] = None):
         """
         :param bsmPDGList: Used to selected the BSM particles to include in the Boltzmann equations. 
@@ -180,7 +197,7 @@ class ModelData(object):
         smComponent = Component(label='SM',PDG=0, mass = 0.0, g = 1.0, ID = 0)
         # The a dynamical number of degrees of freedom for the SM
         smComponent.g = gstar
-        self.componentsDict : Dict[int,Component] = {0 : smComponent}
+        self.componentsDict : Dict[Union[str,int],Component] = {0 : smComponent}
         self.collisionProcesses : List[CollisionProcess] = []
         self.dmPDG = dmPDG # Dark Matter PDG code
         self.pdgList = bsmPDGList[:]
@@ -210,7 +227,7 @@ class ModelData(object):
         logger.debug(f'Loading model from {bannerFile}')
         if not os.path.isfile(bannerFile):
             logger.error(f'Banner file {bannerFile} not found')
-            return False
+            raise FileNotFoundError()
         
 
         dm = parser['Model']['darkmatter']
@@ -355,24 +372,31 @@ class ModelData(object):
                                     'finalPDGs' : list(map(int, finalPDGs.split(',')))}
         processes_data = np.genfromtxt(lines, delimiter=',', skip_header=len(comment_lines), 
                                     names=True)
-        
+        allPDGs = np.abs(smPDGs+self.pdgList)
         for proc_index,pInfo in processDict.items():
-            process = CollisionProcess(initialPDGs=pInfo['initialPDGs'],
-                                    finalPDGs=pInfo['finalPDGs'],
+            inPDGs = pInfo['initialPDGs']
+            outPDGs = pInfo['finalPDGs']
+            # Skip processes containing BSM particles not in the model
+            if any(abs(x) not in allPDGs for x in inPDGs+outPDGs):
+                logger.info(f'Skipping collision process {inPDGs} <-> {outPDGs}')
+                continue
+
+            process = CollisionProcess(initialPDGs=inPDGs,
+                                    finalPDGs=outPDGs,
                                     name=pInfo['name'])
             process.setSigmaV(xlist=processes_data['x'],
                             sigmavList=processes_data[proc_index])
 
             self.collisionProcesses.append(process)
 
-        # Assume all the PDGs not appearing in self.pdgList are in thermal equilibrium (SM)
-        # and set their PDG to zero
+
+        # Set all SM PDGs to zero (assume all SM particles are in thermal equilibrium)
         if self.pdgList:
            for proc in self.collisionProcesses:
                initPDGs = proc.initialPDGs[:]
-               proc.initialPDGs = [x if x in self.pdgList else 0 for x in initPDGs ]
+               proc.initialPDGs = [0 if abs(x) in smPDGs else x for x in initPDGs ]
                finalPDGs = proc.finalPDGs[:]
-               proc.finalPDGs = [x if x in self.pdgList else 0 for x in finalPDGs ]
+               proc.finalPDGs = [0 if abs(x) in smPDGs else x for x in finalPDGs ]
 
     def createLabel2PDGDict(self) -> None:
         if not hasattr(self,'_label2pdgDict'):

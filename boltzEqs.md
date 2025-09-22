@@ -21,6 +21,42 @@ The more general case can be generally written as:
 ```
 where $g_i$ is the multiplicity of $i$ appearing in the $j \rightarrow i+b+...$ decay. For instance, in the decay $j \rightarrow i + i$, we have $g_i = 2$.
 
+# Departure from Equilibrium
+
+It is convenient to determine when the Yield is departuring from equilibrium. If we define $Y_i \equiv \bar{Y}_i \left(1 + \Delta_i\right)$
+and assume $\Delta_i \ll 1$, we have:
+
+
+```math
+\begin{gather*}
+\Large
+\frac{d Y_i}{dx} = \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[-4\langle\sigma v\rangle_{i i} {\bar{Y}_i}^2 \Delta_i - \langle\sigma v\rangle_{ij} \bar{Y}_i \bar{Y}_j \left(\Delta_i + \Delta_j + \Delta_i \Delta_j \right) + 2 \langle\sigma v\rangle_{j j \rightarrow i i} \left( 2 \Delta_j - 2 \Delta_i + \Delta_j^2 \right)- \frac{\Gamma_{i\rightarrow j}}{s} \bar{Y}_i \left(\Delta_i - \Delta_j \right) \right.\\
+\Large
++ \sum_j \frac{K_1 (m_j/T)}{K_2(m_j/T)} \frac{\Gamma_j}{s} \sum_b g_i BR(j \to i+b+...) \bar{Y}_j \left(1 + \Delta_j - \Delta_i \frac{Y_b}{\bar{Y}_b}... - \frac{Y_b}{\bar{Y}_b}...\right)\\
+\Large
+\left.  - \frac{K_1 (m_i/T)}{K_2(m_i/T)} \frac{\Gamma_i}{s}  \sum_{j,b} BR(i \to j +b+...)  \bar{Y}_i \left(1 + \Delta_i - \Delta_j \frac{Y_b}{\bar{Y}_b}... - \frac{Y_b}{\bar{Y}_b}...\right) \right]\\
+\Large
+=  \Delta_i \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[-4\langle\sigma v\rangle_{i i} {\bar{Y}_i}^2 - \langle\sigma v\rangle_{ij} \bar{Y}_i \bar{Y}_j \left(1+ \Delta_j \right) - 4 \langle\sigma v\rangle_{j j \rightarrow i i} - \frac{\Gamma_{i\rightarrow j}}{s} \bar{Y}_i  \right.\\
+\Large
+- \sum_j \frac{K_1 (m_j/T)}{K_2(m_j/T)} \frac{\Gamma_j}{s} \sum_b g_i BR(j \to i+b+...) \bar{Y}_j \left(\frac{Y_b}{\bar{Y}_b}...\right)\\
+\Large
+\left.  - \frac{K_1 (m_i/T)}{K_2(m_i/T)} \frac{\Gamma_i}{s}  \sum_{j,b} BR(i \to j +b+...)  \bar{Y}_i  \right]\\
+\Large
++  \Delta_j \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[ - \langle\sigma v\rangle_{ij} \bar{Y}_i \bar{Y}_j - 4 \langle\sigma v\rangle_{j j \rightarrow i i}\left( 2 + \Delta_j\right) + \frac{\Gamma_{i\rightarrow j}}{s} \bar{Y}_i  \right.\\
+\Large
+- \sum_j \frac{K_1 (m_j/T)}{K_2(m_j/T)} \frac{\Gamma_j}{s} \sum_b g_i BR(j \to i+b+...) \bar{Y}_j \\
+\Large
+\left.  + \frac{K_1 (m_i/T)}{K_2(m_i/T)} \frac{\Gamma_i}{s}  \sum_{j,b} BR(i \to j +b+...)  \bar{Y}_i\left(\frac{Y_b}{\bar{Y}_b}...\right)  \right]\\
+\Large
++ \frac{1}{3H} \left|\frac{ds}{dx} \right| \left[ \sum_j \frac{K_1 (m_j/T)}{K_2(m_j/T)} \frac{\Gamma_j}{s} \sum_b g_i BR(j \to i+b+...) \bar{Y}_j \left(1  - \frac{Y_b}{\bar{Y}_b}...\right) \right.\\
+\Large
+\left. - \frac{K_1 (m_i/T)}{K_2(m_i/T)} \frac{\Gamma_i}{s}  \sum_{j,b} BR(i \to j +b+...)  \bar{Y}_i \left(1  - \frac{Y_b}{\bar{Y}_b}...\right) \right]
+
+\end{gather*}
+```
+
+
+
 # General Boltzmann Equations
 
 The above equations can be written in a general form, more suited for a numerical implementation.
