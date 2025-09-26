@@ -150,6 +150,7 @@ def main(parfile,verbose):
                                                   'method' : 'Radau', 
                                                   'nsteps' : 100}})
     ret = parser.read(parfile)
+    ncpus = parser.toDict(raw=True)['Options'].get('ncpus',1)
     if ret == []:
         logger.error( "No such file or directory: '%s'" % args.parfile)
         sys.exit()
@@ -158,11 +159,6 @@ def main(parfile,verbose):
     parserList = parser.expandLoops()
 
     # Start multiprocessing pool
-    ncpus = -1
-    if parser.has_option("options","ncpu"):
-        ncpus = int(parser.get("options","ncpu"))
-    if ncpus  < 0:
-        ncpus =  multiprocessing.cpu_count()
     ncpus = min(ncpus,len(parserList))
     pool = multiprocessing.Pool(processes=ncpus)
     if ncpus > 1:
@@ -172,12 +168,21 @@ def main(parfile,verbose):
 
     now = datetime.datetime.now()
     children = []
+    i = 1
     for _,newParser in enumerate(parserList):
         # Create temporary folder names if running in parallel
         parserDict = newParser.toDict(raw=False)
+        outputFolder = os.path.abspath(newParser['Options']['outputFolder'])
+        # Set run folder
+        while os.path.isdir(os.path.join(outputFolder,f"run{i}")):
+            i += 1
+        newFolder = os.path.join(outputFolder,f"run{i}")
+        parserDict['Options']['outputFolder'] = newFolder        
         logger.debug('submitting with pars:\n %s \n' %parserDict)
-        p = pool.apply_async(runSolution, args=(parserDict,),)
+        p = pool.apply_async(runSolution, args=(parserDict,),)        
         children.append(p)
+        i += 1
+        time.sleep(5)
 
 #     Wait for jobs to finish:
     output = [p.get() for p in children]
