@@ -150,7 +150,7 @@ def main(parfile,verbose):
                                                   'method' : 'Radau', 
                                                   'nsteps' : 100}})
     ret = parser.read(parfile)
-    ncpus = parser.toDict(raw=True)['Options'].get('ncpus',1)
+    ncpus = int(parser.toDict(raw=True)['Options'].get('ncpus',1))
     if ret == []:
         logger.error( "No such file or directory: '%s'" % args.parfile)
         sys.exit()
@@ -182,7 +182,8 @@ def main(parfile,verbose):
         p = pool.apply_async(runSolution, args=(parserDict,),)        
         children.append(p)
         i += 1
-        time.sleep(5)
+        if ncpus > 1:
+            time.sleep(40) # time for creating maddm folder
 
 #     Wait for jobs to finish:
     output = [p.get() for p in children]
