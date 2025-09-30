@@ -131,8 +131,8 @@ def simplifyProcess(pDict : dict) -> dict:
     else:
         out_new = pname.split('_')[1]
     pname_new = in_new+'_'+out_new
-    initialPDGs_new = np.where(is_sm(initialPDGs),0,initialPDGs)
-    finalPDGs_new = np.where(is_sm(finalPDGs),0,finalPDGs)
+    initialPDGs_new = np.where(is_sm(initialPDGs),0,initialPDGs).tolist()
+    finalPDGs_new = np.where(is_sm(finalPDGs),0,finalPDGs).tolist()
     
     pDict_new['name'] = pname_new
     pDict_new['initialPDGs'] = sorted([abs(pdg) for pdg in initialPDGs_new])
@@ -223,7 +223,7 @@ def mergeOutput(outputFolder : str, maddmFolder : str, addConversion: bool) -> s
             # so we should not add them up!
             # processDict[proc]['data'][:,1] +=  pDict['data'][:,1]
         else:
-            processDict[proc] = simplifyProcess(pDict)
+            processDict[proc] = pDict
             
     # If required, use processes of type BSM_i BSM_j <-> SM_a SM_b
     # to add conversion process (SM BSM_j <-> SM BSM_i)

@@ -75,6 +75,10 @@ def saveSolutions(parser : dict, x_sol, y_sol, model : ModelData) -> bool:
     header = ','.join(headerList)
     outFolder = os.path.abspath(parser['Options']['outputFolder'])
     outFile = os.path.join(outFolder,pars['outputFile'])
+    # Make sure the output folder exists
+    if not os.path.isdir(outFolder):
+        os.makedirs(outFolder)
+
     data_str = StringIO()
     np.savetxt(data_str,data,header=header,fmt='%1.4e',delimiter=',',comments='')
     data_str = data_str.getvalue()
@@ -98,6 +102,7 @@ def runSolution(parser : dict) -> Union[OdeSolution,None]:
     :return: Dictionary with run info. False if failed.
     """
 
+
     if 'skipMadDM' in parser['Options']:
         skipMadDM = bool(parser['Options']['skipMadDM'])
     else:
@@ -108,7 +113,8 @@ def runSolution(parser : dict) -> Union[OdeSolution,None]:
         logger.info("Finished MadDM run")
     else:
         outputFolder = os.path.abspath(parser['Options']['outputFolder'])
-        bannerFile = os.path.join(outputFolder,'darkcalc_banner.txt')
+        bannerFile_default = os.path.join(outputFolder,'darkcalc_banner.txt')
+        bannerFile = parser['Options'].get('bannerFile',bannerFile_default)
     logger.info("Loading model")
     model = ModelData.loadModel(parser, bannerFile)
     logger.info("Model loaded")
