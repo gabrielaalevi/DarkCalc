@@ -22,7 +22,7 @@ def runMadDM(parser : dict) -> str:
     outputFolder = os.path.abspath(parser['Options']['outputFolder'])
     maddmFolder = os.path.join(outputFolder,'maddm')
     if not os.path.isdir(maddmFolder):
-        os.makedirs(maddmFolder)    
+        os.makedirs(maddmFolder)
     
     modelDir = os.path.abspath(parser['Model']['modelDir'])
     if not os.path.isdir(modelDir):
