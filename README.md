@@ -27,7 +27,7 @@ The physical parameters and execution settings are specified via the `input_para
 
 *Options*: definition of paths, and options for turning on and off some DarkCalc features.
 
-- `outputFolder` (path): defines the directory in which DarkCalc will store all output files related to the current run, excluding the input file itself and the solution file.
+- `outputFolder` (path): defines the directory in which DarkCalc will store all output files related to the current run, excluding the input file itself.
   
 - `MadGraphPath` (path): specifies the installation path for MadGraph. If the user executed the installer script, it should be set to \texttt{MG5}.
   
@@ -81,7 +81,7 @@ where 'condition' can be *thermal* (for thermal equilibrium) or a numeric value 
   
 - `nsteps` (integer): number of evaluation steps for the numerical solver.
   
-- `outputFile` (string): name for the output file, along with the file type identifier suffix. By default, the file is saved in the root directory `DarkCalc`.
+- `outputFile` (string):name for the output file, along with the file type identifier suffix. By default, the file is saved in the `outputFolder` directory.
   
 - `extendedOutput` (True/False): if True, DarkCalc saves the contribution from each collision term, for each interaction, in addition to the solution of the Boltzmann equations.
   
