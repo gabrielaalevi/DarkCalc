@@ -34,6 +34,8 @@ The physical parameters and execution settings are specified via the `input_para
 - `skipMadDM` (True/False): if False, DarkCalc will execute MadDM to compute thermally-averaged cross sections and decay widths. If True, the code does not execute MadDM, and instead searches for cross section and decay width values inside the `outputFolder`. This option is useful for re-running only the Boltzmann equation integration, provided that particle masses and couplings remain unchanged.
   
 - `addConversion` (True/False): controls the inclusion of conversion processes in the Boltzmann equation. if True, such interactions are included in the solution. If False, these reactions are omitted.
+
+- `bannerFile` (path): In order to facilitate the use of externally computed cross-section values, it is possible for the user to provide the path to an external file containing the cross-section data. This file should have the same layout as the DarkCalc banner file, which is explained in further detail below.
   
 *Model*: definition of the model characteristics, such as the UFO model and the particles present in the simulation.
 
@@ -58,6 +60,10 @@ where (PDG) identifies the particle.
 (parameter name) = (value)
 
   A complete list of available parameters can be found in the UFO model documentation on the FeynRules database.
+
+  To perform a scan over the parameter space, the user must set the desired parameter(s) to:
+  
+  `parameter name` = $`loop`{value 1, value 2, ...}
   
 *SolverParameters*: options for the numerical integrator and for output formatting.
 
