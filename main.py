@@ -159,7 +159,7 @@ def main(parfile,verbose):
     parserList = parser.expandLoops()
 
     # Start multiprocessing pool
-    ncpus = min(ncpus,len(parserList))
+    ncpus = 1 #min(ncpus,len(parserList))
     pool = multiprocessing.Pool(processes=ncpus)
     if ncpus > 1:
         logger.info('Running %i jobs in parallel with %i processes' %(len(parserList),ncpus))
