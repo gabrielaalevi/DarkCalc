@@ -113,8 +113,12 @@ def runSolution(parser : dict) -> Union[OdeSolution,None]:
         logger.info("Finished MadDM run")
     else:
         outputFolder = os.path.abspath(parser['Options']['outputFolder'])
-        bannerFile_default = os.path.join(outputFolder,'darkcalc_banner.txt')
+        bannerFile_default = os.path.join(outputFolder,'run01','darkcalc_banner.txt')
         bannerFile = parser['Options'].get('bannerFile',bannerFile_default)
+
+    if not os.path.isfile(bannerFile):
+        logger.error(f"Banner file {bannerFile} not found. Specify the correct path in [Options][bannerFile]")
+        raise ValueError()
     logger.info("Loading model")
     model = ModelData.loadModel(parser, bannerFile)
     logger.info("Model loaded")
